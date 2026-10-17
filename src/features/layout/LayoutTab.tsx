@@ -1,6 +1,16 @@
 import { lazy, Suspense, useRef, useState } from 'react';
 import {
   Box,
+  Music,
+  Mic,
+  Wine,
+  UtensilsCrossed,
+  Disc3,
+  Camera,
+  LogIn,
+  Cake,
+  Gift,
+  Type,
   DoorOpen,
   Hand,
   ImagePlus,
@@ -54,6 +64,18 @@ const VENUE: ElementKind[] = [
   'gifts',
   'label',
 ];
+const VENUE_ICONS: Partial<Record<ElementKind, typeof Box>> = {
+  danceFloor: Music,
+  stage: Mic,
+  bar: Wine,
+  buffet: UtensilsCrossed,
+  dj: Disc3,
+  photoBooth: Camera,
+  entrance: LogIn,
+  cake: Cake,
+  gifts: Gift,
+  label: Type,
+};
 
 function viewCenter() {
   const v = useUi.getState().viewport;
@@ -212,7 +234,10 @@ export default function LayoutTab() {
               key={k}
               label={ELEMENT_DEFAULTS[k].label}
               data={`element:${k}`}
-              icon={<Box size={18} className="text-muted" />}
+              icon={(() => {
+                const I = VENUE_ICONS[k] ?? Box;
+                return <I size={18} className="text-muted" />;
+              })()}
               onClick={() => {
                 const c = viewCenter();
                 useUi.getState().set({ selection: [addElement(k, c.x, c.y)] });

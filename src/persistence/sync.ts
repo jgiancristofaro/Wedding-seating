@@ -149,12 +149,10 @@ export class SyncEngine {
     }
     const size = JSON.stringify(doc).length;
     if (size > MAX_DOC_BYTES) {
-      useSync
-        .getState()
-        .set({
-          status: 'error',
-          message: 'This plan is too large to save to the cloud. Export a JSON backup.',
-        });
+      useSync.getState().set({
+        status: 'error',
+        message: 'This plan is too large to save to the cloud. Export a JSON backup.',
+      });
       return;
     }
     this.inflight = true;

@@ -113,10 +113,9 @@ export function TopBar() {
   const role = usePlan((s) => s.role);
   const canUndo = usePlan((s) => s.past.length > 0);
   const canRedo = usePlan((s) => s.future.length > 0);
-  const counts = usePlan((s) => {
-    const gs = Object.values(s.doc!.guests);
-    return { total: gs.length, tables: Object.keys(s.doc!.tables).length };
-  });
+  const totalGuests = usePlan((s) => Object.keys(s.doc!.guests).length);
+  const totalTables = usePlan((s) => Object.keys(s.doc!.tables).length);
+  const counts = { total: totalGuests, tables: totalTables };
   const units = usePlan((s) => s.doc!.settings.units);
   const [share, setShare] = useState(false);
   const [history, setHistory] = useState(false);
@@ -262,7 +261,7 @@ function TabList({ tabs, tab, compact }: { tabs: typeof TABS; tab: Tab; compact?
             key={t.id}
             role="tab"
             aria-selected={active}
-            data-testid={`tab-${t.id}`}
+            data-testid={`${compact ? 'm' : ''}tab-${t.id}`}
             onClick={() => useUi.getState().set({ tab: t.id, selection: [], tool: 'select' })}
             className={cx(
               'flex min-h-[40px] items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors',

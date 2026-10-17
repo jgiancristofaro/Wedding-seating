@@ -34,6 +34,14 @@ function TableNodeImpl(p: TableNodeProps) {
   const showLabels = p.showNames && zoom > 0.75;
   const rot = t.rotation;
   const rad = (rot * Math.PI) / 180;
+  const linear = t.shape === 'rect' || t.shape === 'head' || t.shape === 'sweetheart';
+  const shownName = t.name.length > 16 ? t.name.slice(0, 15) + '…' : t.name;
+  const fs = Math.max(
+    12,
+    linear
+      ? Math.min(26, t.h * 0.4, t.w / (shownName.length * 0.5))
+      : Math.min(30, t.w / 5, (t.w * 1.6) / shownName.length),
+  );
   const label = `${t.name}, ${filled} of ${t.capacity} seats${over ? ', over capacity' : ''}${t.locked ? ', locked' : ''}`;
 
   const body = (() => {
@@ -118,8 +126,8 @@ function TableNodeImpl(p: TableNodeProps) {
             )}
             <circle
               r={CHAIR_R}
-              className={`chair ${g ? 'stroke-ink/30' : overflow ? 'stroke-danger' : 'stroke-muted/50'}`}
-              fill={color}
+              className={`chair ${g ? 'stroke-ink/30' : overflow ? 'stroke-danger fill-danger-soft' : 'stroke-muted/50 fill-surface/80'}`}
+              fill={g ? color : undefined}
               strokeWidth={g ? 2 : 2.5}
               strokeDasharray={g ? undefined : '5 5'}
             />
@@ -197,17 +205,17 @@ function TableNodeImpl(p: TableNodeProps) {
       <g transform={`rotate(${-rot})`} className="pointer-events-none select-none">
         <text
           textAnchor="middle"
-          y={t.shape === 'head' || t.shape === 'sweetheart' || t.shape === 'rect' ? -2 : -6}
-          fontSize={t.shape === 'sweetheart' ? 15 : 20}
+          y={-fs * 0.12}
+          fontSize={fs}
           fontWeight={600}
           className="fill-ink font-display"
         >
-          {t.name.length > 16 ? t.name.slice(0, 15) + '…' : t.name}
+          {shownName}
         </text>
         <text
           textAnchor="middle"
-          y={t.shape === 'head' || t.shape === 'sweetheart' || t.shape === 'rect' ? 18 : 20}
-          fontSize={15}
+          y={fs * 0.82}
+          fontSize={fs * 0.72}
           fontWeight={600}
           className={over ? 'fill-danger' : filled === t.capacity ? 'fill-ok' : 'fill-muted'}
         >

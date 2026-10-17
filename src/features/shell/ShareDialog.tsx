@@ -59,7 +59,7 @@ export function QrCode({ text, size = 168 }: { text: string; size?: number }) {
   }, [text]);
   return (
     <div
-      className="rounded-xl border border-line bg-white p-2"
+      className="shrink-0 rounded-xl border border-line bg-white p-2 [&>svg]:h-full [&>svg]:w-full"
       style={{ width: size, height: size }}
       role="img"
       aria-label="QR code for the link"
