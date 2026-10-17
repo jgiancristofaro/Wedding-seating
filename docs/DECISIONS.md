@@ -47,3 +47,12 @@ Ambiguities resolved during the build, newest last. Each entry: decision — rea
     makes a patch inapplicable, history is cleared instead of corrupting the document.
 18. **Hash routing + relative Vite base** so the build works at any GitHub Pages sub-path with zero config.
 19. **Links can't be revoked** in v1 (documented in the threat model); workaround is restore a backup into a new plan.
+20. **Zola guest lists** (both the export and the upload template) import directly. Partner, "Plus One" (a name or
+    "Yes"), "Additional Guest N" and "Child N First/Last Name" columns become linked household members; a partner
+    named "Guest" is an unnamed plus-one; "Total Definitely Invited" is the party size; "Relationship To Couple" is
+    the group (except "Unknown"); titles, suffixes, contact details and "Total Maybe Invited" are ignored. A child
+    listed without a surname takes the main guest's surname.
+21. **Same-name guests:** two rows with the same name but different household members are treated as different people
+    (real lists have "Ron Smith" senior and junior); identical rows are still skipped as duplicates. On re-import,
+    a name shared by several existing guests matches the one whose household overlaps the row. Companions of a
+    skipped row are skipped with it.

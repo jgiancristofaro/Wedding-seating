@@ -110,12 +110,26 @@ function sideLabel(v: string): string {
   return cap(v);
 }
 
-/** Rows -> candidates. Expands party sizes / plus-ones into linked guests. */
+/** Placeholder values meaning "an unnamed extra guest", e.g. Zola's partner "Guest" or plus-one "Yes". */
+const UNNAMED = /^(guest|yes|y|true|tbd|tba|plus ?one|\+1|unknown|unnamed)$/i;
+/** A cell that reads like a person's name rather than a count / yes-no. */
+const looksLikeName = (v: string) =>
+  /^[\p{L}][\p{L}'’.\- ]*$/u.test(v) && !UNNAMED.test(v) && !NONE.test(v) && !/^(maybe|no|n|false)$/i.test(v);
+const NO_GROUP = /^(unknown|none|n\/?a|-|tbd|other)$/i;
+
+/** A household member listed on the same row as the main guest. `null` = unnamed ("Guest of …"). */
+type Member = { firstName: string; lastName: string; isChild: boolean } | null;
+
+/** Rows -> candidates. Expands party sizes / plus-ones / partners / children into linked guests. */
 export function buildCandidates(rows: string[][], mapping: Mapping): Candidate[] {
   const col = (r: string[], key: string) => {
     const i = mapping.indexOf(key as never);
     return i >= 0 ? (r[i] ?? '').trim() : '';
   };
+  const colsOf = (key: string) => mapping.flatMap((k, i) => (k === key ? [i] : []));
+  const extraCols = colsOf('extraGuest');
+  const childFirstCols = colsOf('childFirst');
+  const childLastCols = colsOf('childLast');
   const out: Candidate[] = [];
   rows.forEach((r, i) => {
     let first = col(r, 'firstName');
@@ -123,8 +137,10 @@ export function buildCandidates(rows: string[][], mapping: Mapping): Candidate[]
     const full = col(r, 'fullName');
     if (full && !first && !last) ({ firstName: first, lastName: last } = splitName(full));
     else if (full && first && !last) last = splitName(full).lastName;
-    const side = col(r, 'side');
-    const groupRaw = col(r, 'group');
+    const sideCell = col(r, 'side');
+    const groupCell = col(r, 'group');
+    const side = NO_GROUP.test(sideCell) ? '' : sideCell;
+    const groupRaw = NO_GROUP.test(groupCell) ? '' : groupCell;
     const group =
       side && groupRaw
         ? `${sideLabel(side)} · ${cap(groupRaw)}`
@@ -152,25 +168,52 @@ export function buildCandidates(rows: string[][], mapping: Mapping): Candidate[]
     };
     out.push(base);
 
-    const plusNames = col(r, 'plusOneName')
+    // Everyone else on this row, in order: plus-one names, partner, additional guests, children.
+    const members: Member[] = [];
+    const named = (full: string, isChild = false): Member => ({ ...splitName(full), isChild });
+    col(r, 'plusOneName')
       .split(/[;&]|\band\b|,(?=\s*\S+\s+\S+)/i)
       .map((s) => s.trim())
-      .filter((s) => s && !NONE.test(s) && !/^(yes|y|true|\d+)$/i.test(s));
+      .filter((s) => s && !NONE.test(s) && !/^(yes|y|true|\d+)$/i.test(s))
+      .forEach((n) => members.push(named(n)));
+    // Zola's upload template puts the plus-one's *name* in "Plus One" (or "Yes" for an unnamed one).
+    const plusCell = col(r, 'plusOnes');
+    let plus = num(plusCell);
+    if (looksLikeName(plusCell)) {
+      members.push(named(plusCell));
+      plus = null;
+    }
+    const pf = col(r, 'partnerFirst');
+    const pl = col(r, 'partnerLast');
+    if ((pf || pl) && !(NONE.test(pf) && !pl)) {
+      if (UNNAMED.test(pf) && !pl) members.push(null);
+      else members.push({ firstName: pf, lastName: pl, isChild: false });
+    }
+    for (const ci of extraCols) {
+      const v = (r[ci] ?? '').trim();
+      if (!v || NONE.test(v)) continue;
+      members.push(UNNAMED.test(v) ? null : named(v));
+    }
+    for (let k = 0; k < Math.max(childFirstCols.length, childLastCols.length); k++) {
+      const cf = childFirstCols[k] != null ? (r[childFirstCols[k]] ?? '').trim() : '';
+      const cl = childLastCols[k] != null ? (r[childLastCols[k]] ?? '').trim() : '';
+      // a child listed without a surname takes the main guest's
+      if (cf || cl) members.push({ firstName: cf, lastName: cl || (cf ? last : ''), isChild: true });
+    }
     const size = num(col(r, 'partySize'));
-    const plus = num(col(r, 'plusOnes'));
-    const extra = Math.min(12, Math.max(plusNames.length, plus ?? 0, size != null ? size - 1 : 0));
+    const extra = Math.min(12, Math.max(members.length, plus ?? 0, size != null ? size - 1 : 0));
     if (extra > 0) {
       if (!base.household) base.household = `row:${i}`;
       for (let k = 0; k < extra; k++) {
-        const n = plusNames[k] ? splitName(plusNames[k]) : null;
+        const m = members[k] ?? null;
         out.push({
           ...base,
-          firstName: n ? cap(n.firstName) : k === 0 ? 'Guest of' : `Guest ${k + 1} of`,
-          lastName: n ? cap(n.lastName || '') : `${base.firstName} ${base.lastName}`.trim(),
+          firstName: m ? cap(m.firstName) : k === 0 ? 'Guest of' : `Guest ${k + 1} of`,
+          lastName: m ? cap(m.lastName || '') : `${base.firstName} ${base.lastName}`.trim(),
           dietary: [],
           access: [],
           notes: '',
-          isChild: false,
+          isChild: m?.isChild ?? false,
           generated: true,
         });
       }
@@ -181,20 +224,80 @@ export function buildCandidates(rows: string[][], mapping: Mapping): Candidate[]
 
 const listStr = (a: string[]) => a.join(', ');
 
-/** Compare candidates with the existing guest list. Matches on normalised full name. */
+/**
+ * Compare candidates with the existing guest list. Matches on normalised full name; when several guests share a
+ * name, the one whose household overlaps the row's other people wins (so two "John Smith"s stay distinct).
+ */
 export function reviewCandidates(candidates: Candidate[], doc: PlanDoc): ReviewRow[] {
-  const existing = new Map<string, Guest>();
-  for (const g of Object.values(doc.guests)) existing.set(nameKey(g), g);
+  const byName = new Map<string, Guest[]>();
+  for (const g of Object.values(doc.guests)) {
+    const k = nameKey(g);
+    byName.set(k, [...(byName.get(k) ?? []), g]);
+  }
+  const partyKeys = new Map<string, Set<string>>();
+  for (const g of Object.values(doc.guests)) {
+    if (!g.partyId) continue;
+    const set = partyKeys.get(g.partyId) ?? new Set<string>();
+    set.add(nameKey(g));
+    partyKeys.set(g.partyId, set);
+  }
+  // everyone named on each source row (main guest + companions)
+  const rowKeys = new Map<number, string[]>();
+  for (const c of candidates) rowKeys.set(c.row, [...(rowKeys.get(c.row) ?? []), nameKey(c)]);
+  const companionsOf = (c: Candidate) => (rowKeys.get(c.row) ?? []).filter((k) => k !== nameKey(c));
+  const usedExisting = new Set<string>();
+  const pickExisting = (c: Candidate): Guest | undefined => {
+    const options = (byName.get(nameKey(c)) ?? []).filter((g) => !usedExisting.has(g.id));
+    if (options.length <= 1) return options[0];
+    const mine = new Set(companionsOf(c));
+    const score = (g: Guest) =>
+      [...(g.partyId ? (partyKeys.get(g.partyId) ?? []) : [])].filter((k) => mine.has(k)).length;
+    return options.reduce((best, g) => (score(g) > score(best) ? g : best), options[0]);
+  };
+
   const groupName = (id: string | null) => (id ? (doc.groups[id]?.name ?? '') : '');
-  const seen = new Set<string>();
-  return candidates.map((c) => {
-    if (!c.firstName && !c.lastName) return { c, status: 'invalid', diffs: [], message: 'No name' };
+  const firstSeen = new Map<string, Candidate>();
+  // main guests that won't be imported; their companions on the same row follow them
+  const skippedRows = new Map<number, { status: 'invalid' | 'duplicate'; reason: string }>();
+  return candidates.map((c): ReviewRow => {
+    const skipped = c.generated ? skippedRows.get(c.row) : undefined;
+    if (skipped)
+      return {
+        c,
+        status: skipped.status,
+        diffs: [],
+        message: `Comes with a skipped row (${skipped.reason})`,
+      };
+    if (!c.firstName && !c.lastName) {
+      if (!c.generated) skippedRows.set(c.row, { status: 'invalid', reason: 'no name' });
+      return { c, status: 'invalid', diffs: [], message: 'No name' };
+    }
     const key = nameKey(c);
-    if (seen.has(key) && !c.generated)
-      return { c, status: 'duplicate', diffs: [], message: 'Appears earlier in this file' };
-    seen.add(key);
-    const ex = existing.get(key);
-    if (!ex) return { c, status: 'new', diffs: [] };
+    if (!c.generated) {
+      const earlier = firstSeen.get(key);
+      if (earlier) {
+        const a = companionsOf(earlier).sort().join('|');
+        const b = companionsOf(c).sort().join('|');
+        // Same name but a different household → a different person (common in real lists: "Ron Smith" Sr. & Jr.)
+        if (a === b) {
+          skippedRows.set(c.row, { status: 'duplicate', reason: 'duplicate' });
+          return { c, status: 'duplicate', diffs: [], message: `Same as row ${earlier.row}` };
+        }
+      } else firstSeen.set(key, c);
+    }
+    const ex = pickExisting(c);
+    if (!ex) {
+      const sameNameEarlier = !c.generated && firstSeen.get(key) !== c;
+      return {
+        c,
+        status: 'new',
+        diffs: [],
+        message: sameNameEarlier
+          ? `Same name as row ${firstSeen.get(key)!.row}, different household — added separately`
+          : undefined,
+      };
+    }
+    usedExisting.add(ex.id);
     const diffs: FieldDiff[] = [];
     if (c.group && c.group.toLowerCase() !== groupName(ex.groupId).toLowerCase())
       diffs.push({ field: 'group', existing: groupName(ex.groupId), incoming: c.group });

@@ -50,3 +50,30 @@ test('rejects a file with no rows with a friendly message', async ({ page }) => 
     .setInputFiles({ name: 'empty.csv', mimeType: 'text/csv', buffer: Buffer.from('\n\n') });
   await expect(page.getByRole('alert')).toContainText('couldn’t find any rows');
 });
+
+const ZOLA = `Total Definitely Invited,Total Maybe Invited,Title,First Name,Last Name,Suffix,Partner Title,Partner First Name,Partner Last Name,Partner Suffix,Relationship To Couple,Email Address,Phone Number,Street Address,Street Address (line 2),City,State / Region,Zip / Postal Code,Country,Child 1 First Name,Child 1 Last Name
+2,,Mrs.,Marie,Curie,,Mr.,Pierre,Curie,,Bride's Family,m@example.com,,1 Rue,,Paris,NY,10003,,,
+2,,,Rosalind,Franklin,,,Guest,,,Unknown,r@example.com,,,,,,,,,
+3,,Mr.,Carl,Sagan,,Ms.,Ann,Druyan,,Groom's Family,c@example.com,,,,Ithaca,NY,14850,,Sasha,Sagan
+`;
+
+test('imports a Zola export with partners, unnamed guests and children as households', async ({ page }) => {
+  await newPlan(page);
+  await page.getByTestId('tab-guests').click();
+  await page.getByTestId('import-open').first().click();
+  await page
+    .getByTestId('import-file')
+    .setInputFiles({ name: 'export.csv', mimeType: 'text/csv', buffer: Buffer.from(ZOLA) });
+  await expect(page.getByTestId('zola-note')).toBeVisible();
+  await expect(page.getByLabel('Field for column Partner First Name')).toHaveValue('partnerFirst');
+  await expect(page.getByLabel('Field for column Partner Title')).toHaveValue('ignore');
+  await page.getByTestId('import-next').click();
+  await expect(page.getByTestId('import-review')).toContainText('7 new');
+  await page.getByTestId('import-confirm').click();
+  await expect(page.getByTestId('guest-row')).toHaveCount(7);
+  for (const n of ['Pierre Curie', 'Guest of Rosalind Franklin', 'Ann Druyan', 'Sasha Sagan'])
+    await expect(page.getByText(n, { exact: true })).toBeVisible();
+  // Sasha is flagged as a child, and the family is one household
+  await expect(page.getByTestId('guest-row').filter({ hasText: 'Sasha Sagan' })).toContainText('child');
+  await expect(page.getByTestId('guest-counts')).toContainText('7 total');
+});

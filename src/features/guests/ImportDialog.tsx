@@ -17,7 +17,14 @@ import {
   type ConflictChoice,
   type ReviewRow,
 } from '../../import/importPlan';
-import { autoMap, FIELDS, mappingProblems, type FieldKey, type Mapping } from '../../import/mapping';
+import {
+  autoMap,
+  detectZola,
+  FIELDS,
+  mappingProblems,
+  type FieldKey,
+  type Mapping,
+} from '../../import/mapping';
 import { fullName } from '../../model/names';
 import { commit, getDoc } from '../../store/planStore';
 import { toast } from '../../store/toastStore';
@@ -86,6 +93,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
   };
 
   const problems = useMemo(() => mappingProblems(mapping), [mapping]);
+  const isZola = useMemo(() => (table ? detectZola(table.headers) : false), [table]);
   const review: ReviewRow[] = useMemo(() => {
     if (step !== 'review' || !table) return [];
     return reviewCandidates(buildCandidates(table.rows, mapping), getDoc());
@@ -238,6 +246,13 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
 
       {step === 'map' && table && (
         <div className="space-y-4">
+          {isZola && (
+            <p className="rounded-lg bg-accent-soft px-3 py-2 text-sm" role="note" data-testid="zola-note">
+              <strong>Zola guest list recognised.</strong> Partners, plus-ones, additional guests and children
+              on each row are added as one household that sits together. “Guest” placeholders become unnamed
+              plus-ones; contact details aren’t imported.
+            </p>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -300,7 +315,11 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
                     <span className={cx('font-medium', !c.firstName && !c.lastName && 'text-danger')}>
                       {fullName(c)}
                     </span>
-                    {c.generated && <span className="chip bg-sunken text-muted">plus-one</span>}
+                    {c.generated && (
+                      <span className="chip bg-sunken text-muted">
+                        {c.isChild ? 'child' : c.firstName.startsWith('Guest') ? 'plus-one' : 'household'}
+                      </span>
+                    )}
                     {c.group && <span className="chip bg-accent-soft text-accent">{c.group}</span>}
                     {c.rsvp && <span className="text-xs text-muted">{c.rsvp}</span>}
                     {c.dietary.map((d) => (
@@ -348,10 +367,10 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
               <ul className="max-h-56 space-y-2 overflow-auto text-sm">
                 {review
                   .filter((r) => r.status === 'update')
-                  .map((r) => {
+                  .map((r, i) => {
                     const ch = choices[r.c.row] ?? defaultChoice;
                     return (
-                      <li key={r.c.row} className="rounded-lg bg-sunken/60 px-3 py-2">
+                      <li key={`${r.c.row}-${i}`} className="rounded-lg bg-sunken/60 px-3 py-2">
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-medium">{fullName(r.c)}</span>
                           <Segmented
@@ -383,13 +402,24 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
               <ul className="mt-2 space-y-1">
                 {review
                   .filter((r) => r.status === 'invalid' || r.status === 'duplicate')
-                  .map((r) => (
-                    <li key={r.c.row} className="text-muted">
+                  .map((r, i) => (
+                    <li key={`${r.c.row}-${i}`} className="text-muted">
                       Row {r.c.row}: {fullName(r.c)} — {r.message}
                     </li>
                   ))}
               </ul>
             </details>
+          )}
+          {review.some((r) => r.status === 'new' && r.message) && (
+            <ul className="space-y-1 rounded-lg bg-sunken/60 px-3 py-2 text-sm" data-testid="import-notes">
+              {review
+                .filter((r) => r.status === 'new' && r.message)
+                .map((r, i) => (
+                  <li key={`${r.c.row}-${i}`}>
+                    Row {r.c.row}: <strong>{fullName(r.c)}</strong> — {r.message}
+                  </li>
+                ))}
+            </ul>
           )}
           <p className="text-xs text-muted">
             Households and plus-ones are linked so they move together on the seating chart.
