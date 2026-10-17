@@ -80,7 +80,9 @@ export function SeatingTab() {
   const noTables = Object.keys(doc.tables).length === 0;
   const noGuests = Object.keys(doc.guests).length === 0;
   const canEdit = editable && !preview;
-  const showInspector = selection.length > 0 || !!focusGuestId;
+  const armedCount = useUi((s) => s.armed.length);
+  // on phones the card would cover the seats you need to tap while a guest is picked up
+  const showInspector = (selection.length > 0 || !!focusGuestId) && !(mobile && armedCount > 0);
 
   return (
     <div className="flex h-full">

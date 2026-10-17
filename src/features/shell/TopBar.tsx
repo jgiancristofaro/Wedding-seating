@@ -265,7 +265,7 @@ function TabList({ tabs, tab, compact }: { tabs: typeof TABS; tab: Tab; compact?
             onClick={() => useUi.getState().set({ tab: t.id, selection: [], tool: 'select' })}
             className={cx(
               'flex min-h-[40px] items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors',
-              compact && 'flex-1 justify-center px-1',
+              compact && 'min-w-0 flex-1 flex-col justify-center gap-0.5 px-1 py-1 text-[11px]',
               active ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-sunken hover:text-ink',
             )}
           >

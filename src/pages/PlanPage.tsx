@@ -4,6 +4,7 @@ import { TopBar } from '../features/shell/TopBar';
 import { SyncBanner } from '../features/shell/SyncBanner';
 import { useBackdropImage } from '../features/layout/useBackdropImage';
 import { BackendError } from '../persistence/backend';
+import { cloudConfigured } from '../persistence/index';
 import { closePlan, openPlan } from '../persistence/session';
 import { redo, undo, usePlan } from '../store/planStore';
 import { useSession } from '../store/sessionStore';
@@ -48,8 +49,9 @@ export default function PlanPage({ token }: { token: string }) {
           setState({
             kind: 'error',
             title: 'We couldn’t find that plan',
-            message:
-              'The link may be mistyped, incomplete, or the plan was removed. Ask whoever shared it for a fresh link.',
+            message: cloudConfigured()
+              ? 'The link may be mistyped, incomplete, or the plan was removed. Ask whoever shared it for a fresh link.'
+              : 'This app is running in local mode, so plans only exist in the browser they were made in. Open the link in that browser, or ask for a JSON backup.',
           });
         else if (err?.code === 'network' || err?.code === 'unavailable')
           setState({

@@ -2,12 +2,13 @@ import { uid } from '../lib/id';
 import type { ElementKind, FloorElement, Guest, PlanDoc, Table, TableShape } from './types';
 
 export const SHAPE_DEFAULTS: Record<TableShape, { w: number; h: number; capacity: number; label: string }> = {
-  round: { w: 152, h: 152, capacity: 10, label: 'Round' },
-  oval: { w: 240, h: 150, capacity: 10, label: 'Oval' },
-  rect: { w: 244, h: 76, capacity: 8, label: 'Banquet' },
-  square: { w: 150, h: 150, capacity: 8, label: 'Square' },
-  head: { w: 488, h: 76, capacity: 10, label: 'Head table' },
-  sweetheart: { w: 120, h: 60, capacity: 2, label: 'Sweetheart' },
+  // standard rental sizes: 60" round, 8' banquet, 16' head table…
+  round: { w: 152.4, h: 152.4, capacity: 10, label: 'Round' },
+  oval: { w: 243.8, h: 152.4, capacity: 10, label: 'Oval' },
+  rect: { w: 243.8, h: 76.2, capacity: 8, label: 'Banquet' },
+  square: { w: 152.4, h: 152.4, capacity: 8, label: 'Square' },
+  head: { w: 487.7, h: 76.2, capacity: 10, label: 'Head table' },
+  sweetheart: { w: 121.9, h: 61, capacity: 2, label: 'Sweetheart' },
 };
 
 export const SEGMENT_KINDS: ElementKind[] = ['wall', 'door', 'window'];

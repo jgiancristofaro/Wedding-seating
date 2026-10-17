@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Visual wedding seating chart planner with link-based sharing",
   "scripts": {
+    "start": "npm install && vite",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",

@@ -63,7 +63,7 @@ type Tap =
   | { kind: 'item'; id: string; itemKind: 'table' | 'element' }
   | { kind: 'background' };
 
-const lodZoom = (z: number) => (z < 0.22 ? 0.2 : z < 0.27 ? 0.25 : z < 0.76 ? 0.5 : 1);
+const lodZoom = (z: number) => (z < 0.22 ? 0.2 : z < 0.27 ? 0.25 : z < 0.6 ? 0.5 : 1);
 const HANDLE_PX = 10;
 
 export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProps) {

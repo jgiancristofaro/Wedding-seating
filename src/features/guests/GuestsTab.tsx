@@ -405,7 +405,7 @@ export function GuestsTab() {
                   <td className="hidden border-b border-line/60 px-2 py-1.5 text-muted sm:table-cell">
                     {table ? `${table.name} · seat ${(g.seat ?? 0) + 1}` : '—'}
                   </td>
-                  <td className="border-b border-line/60 px-2 py-1.5 text-right">
+                  <td className="whitespace-nowrap border-b border-line/60 px-1 py-1.5 text-right">
                     <button
                       className="icon-btn h-9 w-9"
                       onClick={() => setEditing(g.id)}

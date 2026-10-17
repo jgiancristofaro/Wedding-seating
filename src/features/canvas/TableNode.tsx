@@ -31,7 +31,7 @@ function TableNodeImpl(p: TableNodeProps) {
   const hasError = !!p.conflicts?.some((c) => c.severity === 'error');
   const lod = zoom * CHAIR_R; // chair radius in screen px
   const showInitials = lod > 6;
-  const showLabels = p.showNames && zoom > 0.75;
+  const showLabels = p.showNames && zoom >= 1;
   const rot = t.rotation;
   const rad = (rot * Math.PI) / 180;
   const linear = t.shape === 'rect' || t.shape === 'head' || t.shape === 'sweetheart';
