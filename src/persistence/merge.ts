@@ -6,7 +6,11 @@ import type { PlanDoc } from '../model/types';
 type Rec = Record<string, Record<string, unknown>>;
 const COLLECTIONS = ['guests', 'groups', 'tables', 'rules', 'elements'] as const;
 
-function mergeObject<T extends object>(base: T | undefined, mine: T | undefined, theirs: T | undefined): T | undefined {
+function mergeObject<T extends object>(
+  base: T | undefined,
+  mine: T | undefined,
+  theirs: T | undefined,
+): T | undefined {
   if (deepEqual(mine, base)) return theirs; // I didn't touch it
   if (deepEqual(theirs, base)) return mine; // they didn't touch it
   if (mine === undefined) return undefined; // I deleted it

@@ -32,7 +32,14 @@ const ROWS: Row[] = [
   ['bf', 'Rose Bennett', 'Dairy-free', 'Wheelchair', 'attending', 'Grandma — near the exit'],
   ['bf', 'Frank Bennett', '', '', 'attending', 'Uncle'],
   ['bf', 'Linda Bennett', 'Vegetarian', '', 'attending', 'Aunt (divorced from Frank)'],
-  ['bf', 'Paul Bennett + Maria Bennett + Leo Bennett + Mia Bennett', '', '', 'attending', 'Cousins with kids'],
+  [
+    'bf',
+    'Paul Bennett + Maria Bennett + Leo Bennett + Mia Bennett',
+    '',
+    '',
+    'attending',
+    'Cousins with kids',
+  ],
   ['bf', 'Karen Walsh + Steve Walsh'],
   ['bf', 'Emily Walsh', 'Vegan'],
   ['bf', 'Dorothy Hughes', '', 'Hearing', 'attending', 'Great-aunt'],
@@ -187,10 +194,11 @@ export function buildDemoDoc(): PlanDoc {
   const cols = [480, 820, W - 820, W - 480];
   const rowsY = [620, 1000, 1380];
   let n = 1;
-  for (const y of rowsY) for (const x of cols) {
-    const t = makeTable('round', x, y, `Table ${n++}`);
-    doc.tables[t.id] = t;
-  }
+  for (const y of rowsY)
+    for (const x of cols) {
+      const t = makeTable('round', x, y, `Table ${n++}`);
+      doc.tables[t.id] = t;
+    }
   // The couple at the sweetheart table, wedding party at the head table.
   const couple = ['Olivia Bennett', 'Daniel Park'];
   couple.forEach((nm, i) => Object.assign(byName.get(nm)!, { tableId: sweet.id, seat: i, locked: true }));

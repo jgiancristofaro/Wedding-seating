@@ -44,7 +44,4 @@
 
 ## Milestones
 
-1. Schema + policies + SQL tests → 2. model/store/undo → 3. CSV import & mapping → 4. SVG canvas + drag/drop →
-   5. rules/conflicts → 6. persistence/sharing/realtime/history → 7. backdrop + calibration →
-   8. vector tools + assisted tracing → 9. 3D preview → 10. optimizer → 11. exports → 12. polish/a11y →
-   13. unit + e2e tests → 14. CI + Pages deploy.
+1. Schema + policies + SQL tests → 2. model/store/undo → 3. CSV import & mapping → 4. SVG canvas + drag/drop → 5. rules/conflicts → 6. persistence/sharing/realtime/history → 7. backdrop + calibration → 8. vector tools + assisted tracing → 9. 3D preview → 10. optimizer → 11. exports → 12. polish/a11y → 13. unit + e2e tests → 14. CI + Pages deploy.

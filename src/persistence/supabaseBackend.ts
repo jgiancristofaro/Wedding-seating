@@ -14,11 +14,13 @@ import {
 function toError(e: unknown): BackendError {
   const err = e as { code?: string; message?: string; status?: number } | null;
   const msg = err?.message ?? String(e);
-  if (err?.code === '42501' || /forbidden/.test(msg)) return new BackendError('forbidden', 'This link cannot edit the plan.');
+  if (err?.code === '42501' || /forbidden/.test(msg))
+    return new BackendError('forbidden', 'This link cannot edit the plan.');
   if (/too_large/.test(msg)) return new BackendError('too_large', 'That is too large to save.');
   if (/Failed to fetch|NetworkError|network|fetch failed|Load failed/i.test(msg) || err?.status === 0)
     return new BackendError('network', 'You appear to be offline.');
-  if (err?.status && err.status >= 500) return new BackendError('unavailable', 'The server is temporarily unavailable.');
+  if (err?.status && err.status >= 500)
+    return new BackendError('unavailable', 'The server is temporarily unavailable.');
   return new BackendError('unknown', msg);
 }
 
@@ -88,7 +90,9 @@ export class SupabaseBackend implements Backend {
       p_doc: doc,
       p_base_version: baseVersion,
     });
-    return r.ok ? { ok: true, version: Number(r.version) } : { ok: false, version: Number(r.version), doc: r.doc! };
+    return r.ok
+      ? { ok: true, version: Number(r.version) }
+      : { ok: false, version: Number(r.version), doc: r.doc! };
   }
 
   async createSnapshot(editToken: string, label: string) {
@@ -124,7 +128,10 @@ export class SupabaseBackend implements Backend {
   }
 
   async getAsset(token: string, assetId: string): Promise<Blob> {
-    const r = await this.rpc<{ mime: string; data: string } | null>('get_asset', { p_token: token, p_asset_id: assetId });
+    const r = await this.rpc<{ mime: string; data: string } | null>('get_asset', {
+      p_token: token,
+      p_asset_id: assetId,
+    });
     if (!r) throw new BackendError('not_found', 'Image not found');
     const bin = atob(r.data);
     const bytes = new Uint8Array(bin.length);
@@ -135,7 +142,9 @@ export class SupabaseBackend implements Backend {
   // Realtime is only a "something changed" nudge; data is always fetched through the token-checked RPC,
   // so a forged broadcast can at worst trigger a harmless re-fetch.
   subscribe(planId: string, onVersion: (v: number, from: string) => void, onPresence?: (n: number) => void) {
-    const ch = this.sb.channel(`plan:${planId}`, { config: { broadcast: { self: false }, presence: { key: CLIENT_ID } } });
+    const ch = this.sb.channel(`plan:${planId}`, {
+      config: { broadcast: { self: false }, presence: { key: CLIENT_ID } },
+    });
     ch.on('broadcast', { event: 'saved' }, ({ payload }) => {
       const p = payload as { version: number; from: string };
       if (typeof p?.version === 'number' && p.from !== CLIENT_ID) onVersion(p.version, p.from);

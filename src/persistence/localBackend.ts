@@ -41,7 +41,13 @@ async function findByToken(token: string): Promise<{ p: StoredPlan; role: 'edit'
 const clone = <T>(v: T): T => structuredClone(v);
 
 function snap(p: StoredPlan, label: string) {
-  p.snapshots.unshift({ id: uid(), version: p.version, label, createdAt: new Date().toISOString(), doc: clone(p.doc) });
+  p.snapshots.unshift({
+    id: uid(),
+    version: p.version,
+    label,
+    createdAt: new Date().toISOString(),
+    doc: clone(p.doc),
+  });
   p.snapshots = p.snapshots.slice(0, 30);
 }
 

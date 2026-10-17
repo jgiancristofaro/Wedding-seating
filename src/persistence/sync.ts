@@ -55,7 +55,9 @@ export class SyncEngine {
   }
 
   start(initialStatus: SyncStatus = 'saved') {
-    useSync.getState().set({ status: this.role === 'view' ? 'readonly' : initialStatus, message: null, peers: 1 });
+    useSync
+      .getState()
+      .set({ status: this.role === 'view' ? 'readonly' : initialStatus, message: null, peers: 1 });
     this.unsubs.push(
       usePlan.subscribe((s, prev) => {
         if (s.doc !== prev.doc && s.doc) this.onLocalChange();
@@ -105,7 +107,8 @@ export class SyncEngine {
   private onLocalChange() {
     this.writeDraftSoon();
     if (this.role !== 'edit') return;
-    if (this.isDirty() && useSync.getState().status !== 'offline') useSync.getState().set({ status: 'pending' });
+    if (this.isDirty() && useSync.getState().status !== 'offline')
+      useSync.getState().set({ status: 'pending' });
     this.schedule(SAVE_DEBOUNCE);
   }
 
@@ -146,7 +149,12 @@ export class SyncEngine {
     }
     const size = JSON.stringify(doc).length;
     if (size > MAX_DOC_BYTES) {
-      useSync.getState().set({ status: 'error', message: 'This plan is too large to save to the cloud. Export a JSON backup.' });
+      useSync
+        .getState()
+        .set({
+          status: 'error',
+          message: 'This plan is too large to save to the cloud. Export a JSON backup.',
+        });
       return;
     }
     this.inflight = true;
@@ -158,7 +166,9 @@ export class SyncEngine {
         this.baseVersion = res.version;
         this.retryDelay = 2000;
         this.backend.announce(this.planId, res.version);
-        useSync.getState().set({ status: this.isDirty() ? 'pending' : 'saved', lastSavedAt: Date.now(), message: null });
+        useSync
+          .getState()
+          .set({ status: this.isDirty() ? 'pending' : 'saved', lastSavedAt: Date.now(), message: null });
         this.writeDraftNow();
         if (this.isDirty()) this.schedule(SAVE_DEBOUNCE);
       } else {
@@ -177,7 +187,10 @@ export class SyncEngine {
       } else {
         useSync.getState().set({
           status: 'offline',
-          message: err.code === 'network' ? 'Offline — changes are kept on this device and will sync.' : 'Server unavailable — retrying.',
+          message:
+            err.code === 'network'
+              ? 'Offline — changes are kept on this device and will sync.'
+              : 'Server unavailable — retrying.',
         });
         this.schedule(this.retryDelay);
         this.retryDelay = Math.min(30_000, this.retryDelay * 2);
@@ -193,7 +206,9 @@ export class SyncEngine {
     this.baseDoc = remote;
     this.baseVersion = version;
     replaceDoc(doc);
-    toast.info(bumped.length ? `${notice} ${bumped.length} guest(s) were unseated because a seat was taken.` : notice);
+    toast.info(
+      bumped.length ? `${notice} ${bumped.length} guest(s) were unseated because a seat was taken.` : notice,
+    );
   }
 
   /** Another client saved. Pull and merge (or just adopt if we have no local edits). */

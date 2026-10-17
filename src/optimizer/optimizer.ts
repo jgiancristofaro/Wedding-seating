@@ -18,7 +18,10 @@ export interface OptimizerOptions {
 }
 
 export interface OptimizerInput {
-  guests: Pick<Guest, 'id' | 'groupId' | 'partyId' | 'locked' | 'tableId' | 'seat' | 'rsvp' | 'firstName' | 'lastName'>[];
+  guests: Pick<
+    Guest,
+    'id' | 'groupId' | 'partyId' | 'locked' | 'tableId' | 'seat' | 'rsvp' | 'firstName' | 'lastName'
+  >[];
   tables: Pick<Table, 'id' | 'name' | 'capacity' | 'locked' | 'x' | 'y' | 'w' | 'h' | 'shape'>[];
   rules: Rule[];
   options: OptimizerOptions;
@@ -29,7 +32,14 @@ export interface OptimizerResult {
   score: number;
   breakdown: { rules: number; groups: number; balance: number; seated: number };
   issues: string[];
-  stats: { placed: number; unplaced: number; rulesTotal: number; rulesBroken: number; iterations: number; ms: number };
+  stats: {
+    placed: number;
+    unplaced: number;
+    rulesTotal: number;
+    rulesBroken: number;
+    iterations: number;
+    ms: number;
+  };
 }
 
 type Progress = (fraction: number) => void;
@@ -95,7 +105,9 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
       fixedSeats[ti].add(g.seat);
     }
   }
-  const free = tables.map((t, i) => (t.locked ? 0 : Math.max(0, t.capacity - [...fixedSeats[i]].filter((s) => s < t.capacity).length)));
+  const free = tables.map((t, i) =>
+    t.locked ? 0 : Math.max(0, t.capacity - [...fixedSeats[i]].filter((s) => s < t.capacity).length),
+  );
 
   // ---- groups
   const groupIds = [...new Set(input.guests.map((g) => g.groupId).filter((x): x is string => !!x))];
@@ -155,7 +167,8 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
         ? `${name(r.a)} & ${name(r.b)} together${r.scope === 'nearby' ? ' (nearby)' : ''}`
         : `${name(r.a)} & ${name(r.b)} apart${r.scope === 'nearby' ? ' (not nearby)' : ''}`;
     if (a === b) {
-      if (r.kind === 'apart') issues.push(`Can't keep ${name(r.a)} and ${name(r.b)} apart — they are in the same household.`);
+      if (r.kind === 'apart')
+        issues.push(`Can't keep ${name(r.a)} and ${name(r.b)} apart — they are in the same household.`);
       continue;
     }
     if (a < 0 && b < 0) continue; // both fixed; nothing we can do
@@ -164,13 +177,27 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
   // split households and households partly fixed elsewhere want to be together
   for (const ids of splitParties) {
     for (let i = 1; i < ids.length; i++)
-      wrules.push({ a: unitOf.get(ids[0])!, b: unitOf.get(ids[i])!, kind: 'together', scope: 'table', weight: PARTY_SPLIT, label: '' });
+      wrules.push({
+        a: unitOf.get(ids[0])!,
+        b: unitOf.get(ids[i])!,
+        kind: 'together',
+        scope: 'table',
+        weight: PARTY_SPLIT,
+        label: '',
+      });
   }
   for (const g of toPlace) {
     if (!g.partyId) continue;
     const fixedMate = input.guests.find((m) => m.partyId === g.partyId && fixedTable.has(m.id));
     if (fixedMate)
-      wrules.push({ a: unitOf.get(g.id)!, b: endpoint(fixedMate.id)!, kind: 'together', scope: 'table', weight: PARTY_SPLIT, label: '' });
+      wrules.push({
+        a: unitOf.get(g.id)!,
+        b: endpoint(fixedMate.id)!,
+        kind: 'together',
+        scope: 'table',
+        weight: PARTY_SPLIT,
+        label: '',
+      });
   }
   const rulesOfUnit: number[][] = units.map(() => []);
   wrules.forEach((r, i) => {
@@ -197,7 +224,14 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
   const totalNeed = units.reduce((a, u) => a + u.size, 0);
   const fixedCount = fixedSeats.map((s) => s.size);
   const capAll = tables.map((t) => (t.locked ? 0 : t.capacity));
-  const mu = Math.min(1, (totalNeed + fixedCount.reduce((a, b, i) => a + (tables[i].locked ? 0 : b), 0)) / Math.max(1, capAll.reduce((a, b) => a + b, 0)));
+  const mu = Math.min(
+    1,
+    (totalNeed + fixedCount.reduce((a, b, i) => a + (tables[i].locked ? 0 : b), 0)) /
+      Math.max(
+        1,
+        capAll.reduce((a, b) => a + b, 0),
+      ),
+  );
   const gw = options.groupWeight * 20;
   const bw = options.balanceWeight * 6;
 
@@ -273,8 +307,11 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
 
   // ---- construction: most constrained units first
   const order = units
-    .map((u, i) => i)
-    .sort((a, b) => rulesOfUnit[b].length - rulesOfUnit[a].length || units[b].size - units[a].size || rand() - 0.5);
+    .map((_, i) => i)
+    .sort(
+      (a, b) =>
+        rulesOfUnit[b].length - rulesOfUnit[a].length || units[b].size - units[a].size || rand() - 0.5,
+    );
   order.forEach((u, k) => {
     let best = BIN;
     let bestD = Infinity;
@@ -336,11 +373,15 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
   for (let u = 0; u < U; u++) if (tableOf[u] !== BIN) byTable[tableOf[u]].push(u);
   byTable.forEach((us, t) => {
     const cap = tables[t].capacity;
-    us.sort((a, b) => (units[a].comp[0]?.[0] ?? 999) - (units[b].comp[0]?.[0] ?? 999) || units[b].size - units[a].size);
+    us.sort(
+      (a, b) =>
+        (units[a].comp[0]?.[0] ?? 999) - (units[b].comp[0]?.[0] ?? 999) || units[b].size - units[a].size,
+    );
     const freeSeats: number[] = [];
     for (let s = 0; s < cap; s++) if (!fixedSeats[t].has(s)) freeSeats.push(s);
     let k = 0;
-    for (const u of us) for (const id of units[u].guests) assignments[id] = { tableId: tables[t].id, seat: freeSeats[k++] };
+    for (const u of us)
+      for (const id of units[u].guests) assignments[id] = { tableId: tables[t].id, seat: freeSeats[k++] };
   });
 
   // ---- scoring & explanation
@@ -373,7 +414,9 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
     }
   }
   const groupsScore = gN ? gSum / gN : 1;
-  const fills = tables.map((t, i) => (capAll[i] ? (used[i] + fixedCount[i]) / capAll[i] : null)).filter((x): x is number => x != null);
+  const fills = tables
+    .map((_, i) => (capAll[i] ? (used[i] + fixedCount[i]) / capAll[i] : null))
+    .filter((x): x is number => x != null);
   const sd = fills.length ? Math.sqrt(fills.reduce((a, f) => a + (f - mu) ** 2, 0) / fills.length) : 0;
   const balance = Math.max(0, 1 - sd * 2);
   const rulesScore = rulesTotal ? (rulesTotal - broken) / rulesTotal : 1;
@@ -385,6 +428,13 @@ export function optimize(input: OptimizerInput, onProgress?: Progress): Optimize
     score: broken > 0 ? Math.min(score, 89) : score,
     breakdown: { rules: rulesScore, groups: groupsScore, balance, seated },
     issues,
-    stats: { placed: totalNeed - unplaced, unplaced, rulesTotal, rulesBroken: broken, iterations, ms: Date.now() - t0 },
+    stats: {
+      placed: totalNeed - unplaced,
+      unplaced,
+      rulesTotal,
+      rulesBroken: broken,
+      iterations,
+      ms: Date.now() - t0,
+    },
   };
 }

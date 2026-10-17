@@ -24,7 +24,10 @@ export interface ConflictReport {
 /** Extra clearance (cm) between two tables' chair rings that still counts as "nearby". */
 export const NEARBY_SLACK = 180;
 
-export function tablesNearby(a: Pick<Table, 'x' | 'y' | 'w' | 'h'>, b: Pick<Table, 'x' | 'y' | 'w' | 'h'>): boolean {
+export function tablesNearby(
+  a: Pick<Table, 'x' | 'y' | 'w' | 'h'>,
+  b: Pick<Table, 'x' | 'y' | 'w' | 'h'>,
+): boolean {
   return Math.hypot(a.x - b.x, a.y - b.y) <= tableReach(a) + tableReach(b) + NEARBY_SLACK;
 }
 
@@ -96,7 +99,9 @@ export function detectConflicts(doc: Pick<PlanDoc, 'guests' | 'tables' | 'rules'
     else parties.set(g.partyId, [g.id]);
   }
   for (const [pid, ids] of parties) {
-    const seatedTables = new Set(ids.map((id) => guests[id].tableId).filter((t): t is string => !!t && !!tables[t]));
+    const seatedTables = new Set(
+      ids.map((id) => guests[id].tableId).filter((t): t is string => !!t && !!tables[t]),
+    );
     if (seatedTables.size > 1) {
       list.push({
         id: `party:${pid}`,

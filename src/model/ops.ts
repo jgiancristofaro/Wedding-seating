@@ -3,7 +3,11 @@ import type { Guest, PlanDoc } from './types';
 
 export type AssignResult = { ok: true; moved: number } | { ok: false; reason: string };
 
-export function occupiedSeats(doc: PlanDoc, tableId: string, exclude: Set<string> = new Set()): Map<number, string> {
+export function occupiedSeats(
+  doc: PlanDoc,
+  tableId: string,
+  exclude: Set<string> = new Set(),
+): Map<number, string> {
   const m = new Map<number, string>();
   for (const g of Object.values(doc.guests)) {
     if (g.tableId === tableId && g.seat != null && !exclude.has(g.id)) m.set(g.seat, g.id);
@@ -30,7 +34,12 @@ export function freeSeatCount(doc: PlanDoc, tableId: string): number {
  * - Single guest dropped on an occupied seat: swap (occupant takes the mover's old seat, or is unseated).
  * - Otherwise guests fill free seats starting at `seat` (or 0) and continuing clockwise, so households sit together.
  */
-export function assignGuests(doc: PlanDoc, guestIds: string[], tableId: string, seat?: number | null): AssignResult {
+export function assignGuests(
+  doc: PlanDoc,
+  guestIds: string[],
+  tableId: string,
+  seat?: number | null,
+): AssignResult {
   const t = doc.tables[tableId];
   if (!t) return { ok: false, reason: 'That table no longer exists.' };
   const guests = guestIds.map((id) => doc.guests[id]).filter(Boolean);
@@ -102,7 +111,8 @@ export function deleteGuests(doc: PlanDoc, ids: string[]): void {
   for (const r of Object.values(doc.rules)) if (s.has(r.a) || s.has(r.b)) delete doc.rules[r.id];
   // a party of one is no party
   const counts = new Map<string, number>();
-  for (const g of Object.values(doc.guests)) if (g.partyId) counts.set(g.partyId, (counts.get(g.partyId) ?? 0) + 1);
+  for (const g of Object.values(doc.guests))
+    if (g.partyId) counts.set(g.partyId, (counts.get(g.partyId) ?? 0) + 1);
   for (const g of Object.values(doc.guests)) if (g.partyId && counts.get(g.partyId) === 1) g.partyId = null;
 }
 
@@ -114,7 +124,8 @@ export function compactTable(doc: PlanDoc, tableId: string): void {
   const free: number[] = [];
   for (let i = 0; i < t.capacity; i++) if (!occ.has(i)) free.push(i);
   for (const g of Object.values(doc.guests)) {
-    if (g.tableId === tableId && g.seat != null && g.seat >= t.capacity && free.length) g.seat = free.shift()!;
+    if (g.tableId === tableId && g.seat != null && g.seat >= t.capacity && free.length)
+      g.seat = free.shift()!;
   }
 }
 

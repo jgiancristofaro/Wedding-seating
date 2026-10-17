@@ -49,7 +49,11 @@ export interface Backend {
   putAsset(editToken: string, blob: Blob): Promise<string>;
   getAsset(token: string, assetId: string): Promise<Blob>;
   /** Realtime nudge: called with the new version when another client saves. Returns unsubscribe. */
-  subscribe(planId: string, onVersion: (version: number, from: string) => void, onPresence?: (n: number) => void): () => void;
+  subscribe(
+    planId: string,
+    onVersion: (version: number, from: string) => void,
+    onPresence?: (n: number) => void,
+  ): () => void;
   announce(planId: string, version: number): void;
 }
 

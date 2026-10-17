@@ -11,7 +11,16 @@ import {
   partyMembers,
   unassignGuests,
 } from '../model/ops';
-import type { ElementKind, FloorElement, Guest, Group, PlanDoc, Rule, Table, TableShape } from '../model/types';
+import type {
+  ElementKind,
+  FloorElement,
+  Guest,
+  Group,
+  PlanDoc,
+  Rule,
+  Table,
+  TableShape,
+} from '../model/types';
 import { commit, getDoc } from './planStore';
 import { toast } from './toastStore';
 import { useUi } from './uiStore';
@@ -30,15 +39,19 @@ export function addGuest(over: Partial<Guest> = {}): string {
 }
 
 export function updateGuest(id: string, patch: Partial<Guest>) {
-  commit('Edit guest', (d) => {
-    const g = d.guests[id];
-    if (!g) return false;
-    Object.assign(g, patch);
-    if (patch.rsvp === 'declined' && g.tableId && !g.locked) {
-      g.tableId = null;
-      g.seat = null;
-    }
-  });
+  commit(
+    'Edit guest',
+    (d) => {
+      const g = d.guests[id];
+      if (!g) return false;
+      Object.assign(g, patch);
+      if (patch.rsvp === 'declined' && g.tableId && !g.locked) {
+        g.tableId = null;
+        g.seat = null;
+      }
+    },
+    `guest:${id}`,
+  );
 }
 
 export function updateGuests(ids: string[], patch: Partial<Guest>) {
@@ -92,7 +105,12 @@ export function addPlusOne(hostId: string) {
 
 // ---------- seating
 /** Seat a guest (and, if `withParty`, their household) at a table / seat. */
-export function seatGuests(guestIds: string[], tableId: string, seat: number | null, withParty = false): boolean {
+export function seatGuests(
+  guestIds: string[],
+  tableId: string,
+  seat: number | null,
+  withParty = false,
+): boolean {
   const doc = getDoc();
   let ids = guestIds;
   if (withParty) {
@@ -162,7 +180,11 @@ export function applyAssignments(assignments: Record<string, { tableId: string; 
 export function addTable(shape: TableShape, x: number, y: number): string {
   const doc = getDoc();
   const name =
-    shape === 'head' ? 'Head table' : shape === 'sweetheart' ? 'Sweetheart table' : `Table ${nextTableNumber(doc)}`;
+    shape === 'head'
+      ? 'Head table'
+      : shape === 'sweetheart'
+        ? 'Sweetheart table'
+        : `Table ${nextTableNumber(doc)}`;
   const t = makeTable(shape, x, y, name);
   commit('Add table', (d) => {
     d.tables[t.id] = t;
@@ -173,13 +195,17 @@ export function addTable(shape: TableShape, x: number, y: number): string {
 }
 
 export function updateTable(id: string, patch: Partial<Table>) {
-  commit('Edit table', (d) => {
-    const t = d.tables[id];
-    if (!t) return false;
-    Object.assign(t, patch);
-    if (patch.capacity != null) compactTable(d, id);
-    touchLayout(d);
-  });
+  commit(
+    'Edit table',
+    (d) => {
+      const t = d.tables[id];
+      if (!t) return false;
+      Object.assign(t, patch);
+      if (patch.capacity != null) compactTable(d, id);
+      touchLayout(d);
+    },
+    `table:${id}`,
+  );
 }
 
 export function moveItems(moves: { id: string; x: number; y: number; x2?: number; y2?: number }[]) {
@@ -272,7 +298,12 @@ export function setLocked(ids: string[], locked: boolean) {
 }
 
 // ---------- floor elements
-export function addElement(kind: ElementKind, x: number, y: number, over: Partial<FloorElement> = {}): string {
+export function addElement(
+  kind: ElementKind,
+  x: number,
+  y: number,
+  over: Partial<FloorElement> = {},
+): string {
   const e = makeElement(kind, x, y, over);
   commit(`Add ${kind}`, (d) => {
     d.elements[e.id] = e;
@@ -293,11 +324,15 @@ export function addSegments(kind: ElementKind, segs: { x: number; y: number; x2:
 }
 
 export function updateElement(id: string, patch: Partial<FloorElement>) {
-  commit('Edit element', (d) => {
-    const e = d.elements[id];
-    if (!e) return false;
-    Object.assign(e, patch);
-  });
+  commit(
+    'Edit element',
+    (d) => {
+      const e = d.elements[id];
+      if (!e) return false;
+      Object.assign(e, patch);
+    },
+    `element:${id}`,
+  );
 }
 
 // ---------- groups & rules
@@ -311,9 +346,13 @@ export function addGroup(name: string): string {
 }
 
 export function updateGroup(id: string, patch: Partial<Group>) {
-  commit('Edit group', (d) => {
-    if (d.groups[id]) Object.assign(d.groups[id], patch);
-  });
+  commit(
+    'Edit group',
+    (d) => {
+      if (d.groups[id]) Object.assign(d.groups[id], patch);
+    },
+    `group:${id}`,
+  );
 }
 
 export function deleteGroup(id: string) {

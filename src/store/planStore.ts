@@ -10,6 +10,9 @@ interface HistoryEntry {
   label: string;
   patches: Patch[];
   inverse: Patch[];
+  /** consecutive edits with the same key within a short window collapse into one undo step (typing) */
+  key?: string;
+  at: number;
 }
 
 export interface PlanState {
@@ -45,7 +48,11 @@ export function loadDoc(doc: PlanDoc, role: Role, planId: string | null) {
  * Apply an undoable edit. The recipe may return `false` to abort without recording history.
  * Returns whatever the recipe returned (handy for passing results out).
  */
-export function commit<T = void>(label: string, recipe: (d: PlanDoc) => T): T | undefined {
+export function commit<T = void>(
+  label: string,
+  recipe: (d: PlanDoc) => T,
+  coalesceKey?: string,
+): T | undefined {
   const st = usePlan.getState();
   if (!st.doc || st.role !== 'edit') return undefined;
   let result: T | undefined;
@@ -63,7 +70,17 @@ export function commit<T = void>(label: string, recipe: (d: PlanDoc) => T): T | 
     },
   );
   if ((result as unknown) === false || patches.length === 0) return result;
-  const past = [...st.past, { label, patches, inverse }];
+  const now = Date.now();
+  const last = st.past[st.past.length - 1];
+  let past: HistoryEntry[];
+  if (coalesceKey && last?.key === coalesceKey && now - last.at < 1500) {
+    past = [
+      ...st.past.slice(0, -1),
+      { ...last, patches: [...last.patches, ...patches], inverse: [...inverse, ...last.inverse], at: now },
+    ];
+  } else {
+    past = [...st.past, { label, patches, inverse, key: coalesceKey, at: now }];
+  }
   if (past.length > HISTORY_LIMIT) past.shift();
   usePlan.setState({ doc: next, past, future: [], localRevision: st.localRevision + 1 });
   return result;

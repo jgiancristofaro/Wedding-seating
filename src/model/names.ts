@@ -29,7 +29,21 @@ export function splitName(full: string): { firstName: string; lastName: string }
   const parts = s.split(' ');
   if (parts.length === 1) return { firstName: parts[0], lastName: '' };
   // keep particles with the surname: "Anna van der Berg"
-  const particles = new Set(['van', 'von', 'de', 'der', 'da', 'del', 'di', 'la', 'le', 'du', 'st.', 'bin', 'al']);
+  const particles = new Set([
+    'van',
+    'von',
+    'de',
+    'der',
+    'da',
+    'del',
+    'di',
+    'la',
+    'le',
+    'du',
+    'st.',
+    'bin',
+    'al',
+  ]);
   let i = parts.length - 1;
   while (i > 1 && particles.has(parts[i - 1].toLowerCase())) i--;
   return { firstName: parts.slice(0, i).join(' '), lastName: parts.slice(i).join(' ') };

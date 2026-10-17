@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { emptyDoc, makeGuest } from '../model/factory';
 import { decodeBytes, parseDelimited } from './csv';
-import { applyImport, buildCandidates, parseList, parseRsvp, reviewCandidates, SAMPLE_CSV } from './importPlan';
+import {
+  applyImport,
+  buildCandidates,
+  parseList,
+  parseRsvp,
+  reviewCandidates,
+  SAMPLE_CSV,
+} from './importPlan';
 import { autoMap, mappingProblems } from './mapping';
 
 describe('parseDelimited', () => {
   it('handles quoted commas, embedded newlines and BOM', () => {
-    const t = parseDelimited('﻿Name,Notes\n"Smith, Jane","line1\nline2"\nBob Lee,ok\n');
+    const t = parseDelimited('\uFEFFName,Notes\n"Smith, Jane","line1\nline2"\nBob Lee,ok\n');
     expect(t.headers).toEqual(['Name', 'Notes']);
     expect(t.rows).toEqual([
       ['Smith, Jane', 'line1\nline2'],
@@ -58,19 +65,35 @@ describe('decodeBytes', () => {
 describe('autoMap', () => {
   it('maps common header variants', () => {
     const m = autoMap(
-      ['Guest Name', 'Party Size', 'Plus-one name', 'Side', 'Relationship', 'Meal choice', 'RSVP', 'Comments', 'Email'],
+      [
+        'Guest Name',
+        'Party Size',
+        'Plus-one name',
+        'Side',
+        'Relationship',
+        'Meal choice',
+        'RSVP',
+        'Comments',
+        'Email',
+      ],
       [],
     );
-    expect(m).toEqual(['fullName', 'partySize', 'plusOneName', 'side', 'group', 'dietary', 'rsvp', 'notes', 'ignore']);
+    expect(m).toEqual([
+      'fullName',
+      'partySize',
+      'plusOneName',
+      'side',
+      'group',
+      'dietary',
+      'rsvp',
+      'notes',
+      'ignore',
+    ]);
   });
   it('maps first/last and household', () => {
-    expect(autoMap(['First Name', 'Last Name', 'Household', 'Plus Ones', 'Dietary Restrictions'], [])).toEqual([
-      'firstName',
-      'lastName',
-      'household',
-      'plusOnes',
-      'dietary',
-    ]);
+    expect(
+      autoMap(['First Name', 'Last Name', 'Household', 'Plus Ones', 'Dietary Restrictions'], []),
+    ).toEqual(['firstName', 'lastName', 'household', 'plusOnes', 'dietary']);
   });
   it('sniffs content when there are no headers', () => {
     const rows = [
@@ -96,7 +119,11 @@ describe('value parsing', () => {
     expect(parseRsvp('')).toBe(null);
   });
   it('normalises dietary lists', () => {
-    expect(parseList('veg; gluten free and nut allergy')).toEqual(['Vegetarian', 'Gluten-free', 'Nut allergy']);
+    expect(parseList('veg; gluten free and nut allergy')).toEqual([
+      'Vegetarian',
+      'Gluten-free',
+      'Nut allergy',
+    ]);
     expect(parseList('N/A')).toEqual([]);
     expect(parseList('Vegan, no shellfish')).toEqual(['Vegan', 'Shellfish allergy']);
   });
@@ -138,7 +165,9 @@ describe('candidates + merge', () => {
     expect(review2.filter((r) => r.status === 'new')).toHaveLength(0);
     const keep = applyImport(doc, review2, () => 'existing');
     expect(keep.added).toBe(0);
-    expect(Object.values(doc.guests).find((g) => g.firstName === 'Michael')!.dietary).toEqual(['Gluten-free']);
+    expect(Object.values(doc.guests).find((g) => g.firstName === 'Michael')!.dietary).toEqual([
+      'Gluten-free',
+    ]);
     applyImport(doc, review2, () => 'incoming');
     expect(Object.values(doc.guests).find((g) => g.firstName === 'Michael')!.dietary).toEqual(['Vegan']);
     expect(Object.keys(doc.guests)).toHaveLength(7);

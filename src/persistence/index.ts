@@ -11,7 +11,8 @@ export function getBackend(): Promise<Backend> {
   if (!backend) {
     backend = cloudConfigured()
       ? import('./supabaseBackend').then(
-          (m) => new m.SupabaseBackend(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY),
+          (m) =>
+            new m.SupabaseBackend(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY),
         )
       : Promise.resolve(new LocalBackend());
   }

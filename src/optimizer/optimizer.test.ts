@@ -5,7 +5,14 @@ import { detectConflicts } from '../rules/conflicts';
 import type { PlanDoc } from '../model/types';
 import { optimize, type OptimizerOptions } from './optimizer';
 
-const opts: OptimizerOptions = { mode: 'all', includePending: true, groupWeight: 1, balanceWeight: 1, mixGroups: [], seed: 7 };
+const opts: OptimizerOptions = {
+  mode: 'all',
+  includePending: true,
+  groupWeight: 1,
+  balanceWeight: 1,
+  mixGroups: [],
+  seed: 7,
+};
 
 function run(doc: PlanDoc, o: Partial<OptimizerOptions> = {}) {
   return optimize({
@@ -57,7 +64,9 @@ describe('optimizer', () => {
     const res = run(doc);
     expect(res.assignments[someone.id]).toBeUndefined(); // fixed guests aren't part of the output
     expect(Object.values(res.assignments).some((a) => a?.tableId === lockedTable.id)).toBe(false);
-    expect(Object.values(res.assignments).some((a) => a?.tableId === someone.tableId && a.seat === 3)).toBe(false);
+    expect(Object.values(res.assignments).some((a) => a?.tableId === someone.tableId && a.seat === 3)).toBe(
+      false,
+    );
   });
 
   it('keeps households together and groups cohesive', () => {
@@ -69,11 +78,21 @@ describe('optimizer', () => {
     doc.groups.a = { id: 'a', name: 'A', color: '#fff' };
     doc.groups.b = { id: 'b', name: 'B', color: '#fff' };
     for (let i = 0; i < 12; i++) {
-      const g = makeGuest({ firstName: `G${i}`, rsvp: 'attending', groupId: i < 6 ? 'a' : 'b', partyId: i % 2 === 0 ? `p${i}` : `p${i - 1}` });
+      const g = makeGuest({
+        firstName: `G${i}`,
+        rsvp: 'attending',
+        groupId: i < 6 ? 'a' : 'b',
+        partyId: i % 2 === 0 ? `p${i}` : `p${i - 1}`,
+      });
       doc.guests[g.id] = g;
     }
     const next = applyTo(doc, run(doc));
-    const tablesOf = (grp: string) => new Set(Object.values(next.guests).filter((g) => g.groupId === grp).map((g) => g.tableId));
+    const tablesOf = (grp: string) =>
+      new Set(
+        Object.values(next.guests)
+          .filter((g) => g.groupId === grp)
+          .map((g) => g.tableId),
+      );
     expect(tablesOf('a').size).toBe(1);
     expect(tablesOf('b').size).toBe(1);
     expect(detectConflicts(next).list).toEqual([]);
@@ -120,11 +139,23 @@ describe('optimizer', () => {
     for (let k = 0; k < 12; k++) doc.groups[`g${k}`] = { id: `g${k}`, name: `G${k}`, color: '#fff' };
     const ids: string[] = [];
     for (let i = 0; i < 500; i++) {
-      const g = makeGuest({ firstName: `P${i}`, rsvp: 'attending', groupId: `g${i % 12}`, partyId: i % 3 === 0 ? `h${i}` : i % 3 === 1 ? `h${i - 1}` : null });
+      const g = makeGuest({
+        firstName: `P${i}`,
+        rsvp: 'attending',
+        groupId: `g${i % 12}`,
+        partyId: i % 3 === 0 ? `h${i}` : i % 3 === 1 ? `h${i - 1}` : null,
+      });
       doc.guests[g.id] = g;
       ids.push(g.id);
     }
-    for (let r = 0; r < 20; r++) doc.rules[`r${r}`] = { id: `r${r}`, kind: r % 2 ? 'apart' : 'together', scope: 'table', a: ids[r * 7 + 2], b: ids[r * 11 + 5] };
+    for (let r = 0; r < 20; r++)
+      doc.rules[`r${r}`] = {
+        id: `r${r}`,
+        kind: r % 2 ? 'apart' : 'together',
+        scope: 'table',
+        a: ids[r * 7 + 2],
+        b: ids[r * 11 + 5],
+      };
     const res = run(doc);
     expect(res.stats.unplaced).toBe(0);
     expect(res.stats.ms).toBeLessThan(15000);

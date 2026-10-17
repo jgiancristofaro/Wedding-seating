@@ -40,7 +40,10 @@ const SYNONYMS: [FieldKey, RegExp][] = [
   ['firstName', /^(first|given|fore)[\s_-]*(name)?$|^fname$|^first$/i],
   ['lastName', /^(last|family|sur)[\s_-]*(name)?$|^lname$|^surname$/i],
   ['fullName', /^((full|guest|display)[\s_-]*)?name$|^guest$|^invitee|^attendee/i],
-  ['partySize', /party[\s_-]*size|^size$|#[\s_-]*(in[\s_-]*party|guests)|number[\s_-]*of[\s_-]*(guests|people)|^total|head[\s_-]*count|^count$|^seats$/i],
+  [
+    'partySize',
+    /party[\s_-]*size|^size$|#[\s_-]*(in[\s_-]*party|guests)|number[\s_-]*of[\s_-]*(guests|people)|^total|head[\s_-]*count|^count$|^seats$/i,
+  ],
   ['plusOnes', /plus[\s_-]*ones?$|^\+1s?$|^plus$|additional[\s_-]*guests|^extra/i],
   ['household', /household|family[\s_-]*(id|name)?$|^party$|party[\s_-]*(id|name)|invitation|^invite/i],
   ['side', /^side$|bride[\s_-]*or[\s_-]*groom|^whose|guest[\s_-]*of$/i],
@@ -72,11 +75,15 @@ export function autoMap(headers: string[], rows: string[][]): Mapping {
   // Content sniffing for headerless / unknown columns.
   out.forEach((k, i) => {
     if (k !== 'ignore') return;
-    const sample = rows.slice(0, 30).map((r) => r[i] ?? '').filter(Boolean);
+    const sample = rows
+      .slice(0, 30)
+      .map((r) => r[i] ?? '')
+      .filter(Boolean);
     if (sample.length === 0) return;
     const frac = (re: RegExp) => sample.filter((s) => re.test(s)).length / sample.length;
     let guess: FieldKey | null = null;
-    if (frac(/^(yes|no|y|n|attending|declined|pending|accepted|maybe|tbd|confirmed|regrets?)$/i) > 0.7) guess = 'rsvp';
+    if (frac(/^(yes|no|y|n|attending|declined|pending|accepted|maybe|tbd|confirmed|regrets?)$/i) > 0.7)
+      guess = 'rsvp';
     else if (frac(/veg|vegan|gluten|nut|kosher|halal|dairy|allerg|none/i) > 0.5) guess = 'dietary';
     else if (frac(/^(bride|groom|both|mutual)('?s)?( side)?$/i) > 0.7) guess = 'side';
     else if (frac(/^\d{1,2}$/) > 0.8) guess = 'partySize';

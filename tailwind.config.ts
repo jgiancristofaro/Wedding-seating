@@ -22,6 +22,8 @@ export default {
         'danger-soft': v('danger-soft'),
         warn: v('warn'),
         ok: v('ok'),
+        canvas: v('canvas'),
+        grid: v('grid'),
       },
       fontFamily: {
         sans: ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],

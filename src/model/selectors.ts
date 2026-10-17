@@ -36,7 +36,14 @@ export function planIndex(doc: Pick<PlanDoc, 'guests' | 'tables' | 'settings'>):
       m.set(g.seat, g);
     } else if (isActive) unseated++;
   }
-  const idx = { seating, parties, seatedCount: seated, unseatedCount: unseated, activeCount: active, _t: doc.tables };
+  const idx = {
+    seating,
+    parties,
+    seatedCount: seated,
+    unseatedCount: unseated,
+    activeCount: active,
+    _t: doc.tables,
+  };
   cache.set(doc.guests, idx);
   return idx;
 }

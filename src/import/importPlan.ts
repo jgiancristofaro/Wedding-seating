@@ -44,8 +44,10 @@ const NONE = /^(none|n\/?a|no|-|–|nil|0|null|no restrictions?)$/i;
 export function parseRsvp(v: string): Rsvp | null {
   const s = v.trim().toLowerCase();
   if (!s) return null;
-  if (/^(y|yes|attending|accepted?|confirmed|going|coming|true|1|✓|x)$/.test(s) || s.startsWith('yes')) return 'attending';
-  if (/^(n|no|declined?|regrets?|not attending|not coming|false|0|cancel+ed)$/.test(s) || s.startsWith('no')) return 'declined';
+  if (/^(y|yes|attending|accepted?|confirmed|going|coming|true|1|✓|x)$/.test(s) || s.startsWith('yes'))
+    return 'attending';
+  if (/^(n|no|declined?|regrets?|not attending|not coming|false|0|cancel+ed)$/.test(s) || s.startsWith('no'))
+    return 'declined';
   return 'pending';
 }
 
@@ -123,7 +125,14 @@ export function buildCandidates(rows: string[][], mapping: Mapping): Candidate[]
     else if (full && first && !last) last = splitName(full).lastName;
     const side = col(r, 'side');
     const groupRaw = col(r, 'group');
-    const group = side && groupRaw ? `${sideLabel(side)} · ${cap(groupRaw)}` : groupRaw ? cap(groupRaw) : side ? `${sideLabel(side)}'s side`.replace("Both's side", 'Both sides') : '';
+    const group =
+      side && groupRaw
+        ? `${sideLabel(side)} · ${cap(groupRaw)}`
+        : groupRaw
+          ? cap(groupRaw)
+          : side
+            ? `${sideLabel(side)}'s side`.replace("Both's side", 'Both sides')
+            : '';
     const childRaw = col(r, 'child');
     const isChild = !!childRaw && (/^(y|yes|true|child|kid)$/i.test(childRaw) || (num(childRaw) ?? 99) < 13);
     const hh = col(r, 'household');
@@ -181,7 +190,8 @@ export function reviewCandidates(candidates: Candidate[], doc: PlanDoc): ReviewR
   return candidates.map((c) => {
     if (!c.firstName && !c.lastName) return { c, status: 'invalid', diffs: [], message: 'No name' };
     const key = nameKey(c);
-    if (seen.has(key) && !c.generated) return { c, status: 'duplicate', diffs: [], message: 'Appears earlier in this file' };
+    if (seen.has(key) && !c.generated)
+      return { c, status: 'duplicate', diffs: [], message: 'Appears earlier in this file' };
     seen.add(key);
     const ex = existing.get(key);
     if (!ex) return { c, status: 'new', diffs: [] };
@@ -193,7 +203,8 @@ export function reviewCandidates(candidates: Candidate[], doc: PlanDoc): ReviewR
       diffs.push({ field: 'dietary', existing: listStr(ex.dietary), incoming: listStr(c.dietary) });
     if (c.access.length && listStr(c.access) !== listStr(ex.access))
       diffs.push({ field: 'access', existing: listStr(ex.access), incoming: listStr(c.access) });
-    if (c.notes && c.notes !== ex.notes) diffs.push({ field: 'notes', existing: ex.notes, incoming: c.notes });
+    if (c.notes && c.notes !== ex.notes)
+      diffs.push({ field: 'notes', existing: ex.notes, incoming: c.notes });
     return { c, status: diffs.length ? 'update' : 'same', existingId: ex.id, diffs };
   });
 }
@@ -236,7 +247,11 @@ export function applyImport(
     }
     return p;
   };
-  const taken = new Set(Object.values(doc.guests).filter((g) => g.tableId).map((g) => `${g.tableId}:${g.seat}`));
+  const taken = new Set(
+    Object.values(doc.guests)
+      .filter((g) => g.tableId)
+      .map((g) => `${g.tableId}:${g.seat}`),
+  );
 
   for (const r of review) {
     const c = r.c;
@@ -292,7 +307,8 @@ export function applyImport(
   }
   // Single-member parties are pointless.
   const counts = new Map<string, number>();
-  for (const g of Object.values(doc.guests)) if (g.partyId) counts.set(g.partyId, (counts.get(g.partyId) ?? 0) + 1);
+  for (const g of Object.values(doc.guests))
+    if (g.partyId) counts.set(g.partyId, (counts.get(g.partyId) ?? 0) + 1);
   for (const g of Object.values(doc.guests)) if (g.partyId && counts.get(g.partyId) === 1) g.partyId = null;
   return sum;
 }

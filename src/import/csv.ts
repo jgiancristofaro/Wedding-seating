@@ -29,9 +29,13 @@ const HEADER_WORDS =
 
 /** Parse CSV / TSV / pasted spreadsheet text. Delimiter is auto-detected; quoted commas and newlines are handled. */
 export function parseDelimited(input: string): ParsedTable {
-  const text = input.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  const text = input.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const firstLine = text.split('\n', 1)[0] ?? '';
-  const delimiter = firstLine.includes('\t') ? '\t' : firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
+  const delimiter = firstLine.includes('\t')
+    ? '\t'
+    : firstLine.split(';').length > firstLine.split(',').length
+      ? ';'
+      : ',';
   const res = Papa.parse<string[]>(text, { delimiter, skipEmptyLines: 'greedy' });
   const all = res.data
     .map((r) => r.map((c) => (c ?? '').toString().trim()))
@@ -45,5 +49,9 @@ export function parseDelimited(input: string): ParsedTable {
     const headers = pad(first).map((h, i) => h || `Column ${i + 1}`);
     return { headers, rows: all.slice(1).map(pad), syntheticHeaders: false };
   }
-  return { headers: Array.from({ length: width }, (_, i) => `Column ${i + 1}`), rows: all.map(pad), syntheticHeaders: true };
+  return {
+    headers: Array.from({ length: width }, (_, i) => `Column ${i + 1}`),
+    rows: all.map(pad),
+    syntheticHeaders: true,
+  };
 }

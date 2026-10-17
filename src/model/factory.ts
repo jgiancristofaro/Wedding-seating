@@ -53,18 +53,51 @@ export function nextTableNumber(doc: Pick<PlanDoc, 'tables'>): number {
   return max + 1;
 }
 
-export function makeTable(shape: TableShape, x: number, y: number, name: string, over: Partial<Table> = {}): Table {
+export function makeTable(
+  shape: TableShape,
+  x: number,
+  y: number,
+  name: string,
+  over: Partial<Table> = {},
+): Table {
   const d = SHAPE_DEFAULTS[shape];
-  return { id: uid(), name, shape, x, y, w: d.w, h: d.h, rotation: 0, capacity: d.capacity, locked: false, ...over };
+  return {
+    id: uid(),
+    name,
+    shape,
+    x,
+    y,
+    w: d.w,
+    h: d.h,
+    rotation: 0,
+    capacity: d.capacity,
+    locked: false,
+    ...over,
+  };
 }
 
-export function makeElement(kind: ElementKind, x: number, y: number, over: Partial<FloorElement> = {}): FloorElement {
+export function makeElement(
+  kind: ElementKind,
+  x: number,
+  y: number,
+  over: Partial<FloorElement> = {},
+): FloorElement {
   const d = ELEMENT_DEFAULTS[kind];
   if (isSegment(kind)) {
     const len = kind === 'wall' ? 400 : d.h;
     return { id: uid(), kind, x: x - len / 2, y, x2: x + len / 2, y2: y, w: d.w, h: 0, rotation: 0, ...over };
   }
-  return { id: uid(), kind, x, y, w: d.w, h: d.h, rotation: 0, label: kind === 'label' ? 'Label' : undefined, ...over };
+  return {
+    id: uid(),
+    kind,
+    x,
+    y,
+    w: d.w,
+    h: d.h,
+    rotation: 0,
+    label: kind === 'label' ? 'Label' : undefined,
+    ...over,
+  };
 }
 
 export function makeGuest(over: Partial<Guest> = {}): Guest {
