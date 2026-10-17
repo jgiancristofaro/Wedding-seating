@@ -214,6 +214,19 @@ export function GuestEditor({ guestId, onClose }: { guestId: string; onClose: ()
         />
 
         <div>
+          <label className="label" htmlFor="ge-meal">
+            Meal choice
+          </label>
+          <input
+            id="ge-meal"
+            className="input"
+            value={g.meal ?? ''}
+            placeholder="e.g. Short rib — filled in from RSVPs"
+            onChange={(e) => updateGuest(g.id, { meal: e.target.value || undefined })}
+          />
+        </div>
+
+        <div>
           <label className="label" htmlFor="ge-notes">
             Notes
           </label>

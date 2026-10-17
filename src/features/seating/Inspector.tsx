@@ -157,7 +157,14 @@ export function Inspector({
             ))}
           </div>
         )}
-        {g.notes && <p className="rounded-lg bg-sunken px-3 py-2 text-sm text-muted">{g.notes}</p>}
+        {g.meal && (
+          <p className="text-sm">
+            Meal: <strong>{g.meal}</strong>
+          </p>
+        )}
+        {g.notes && (
+          <p className="whitespace-pre-line rounded-lg bg-sunken px-3 py-2 text-sm text-muted">{g.notes}</p>
+        )}
         {conflicts.length > 0 && (
           <ul className="space-y-1 text-sm text-danger" role="list">
             {conflicts.map((c) => (

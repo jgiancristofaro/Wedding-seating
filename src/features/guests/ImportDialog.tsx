@@ -25,6 +25,7 @@ import {
   type FieldKey,
   type Mapping,
 } from '../../import/mapping';
+import { isRsvpFile } from '../../import/rsvp';
 import { fullName } from '../../model/names';
 import { commit, getDoc } from '../../store/planStore';
 import { toast } from '../../store/toastStore';
@@ -33,7 +34,16 @@ import { downloadSampleCsv } from './GuestsTab';
 type Step = 'source' | 'map' | 'review';
 const MAX_FILE = 5 * 1024 * 1024;
 
-export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ImportDialog({
+  open,
+  onClose,
+  onRsvpFile,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** called instead of importing when the file is an RSVP export rather than a guest list */
+  onRsvpFile?: (t: ParsedTable) => void;
+}) {
   const [step, setStep] = useState<Step>('source');
   const [table, setTable] = useState<ParsedTable | null>(null);
   const [mapping, setMapping] = useState<Mapping>([]);
@@ -66,6 +76,12 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     }
     if (t.rows.length > 2000) {
       setError(`That’s ${t.rows.length} rows — the limit is 2,000 guests per import.`);
+      return;
+    }
+    if (onRsvpFile && isRsvpFile(t)) {
+      reset();
+      onRsvpFile(t);
+      toast.info('That’s an RSVP file — showing who’s coming instead of importing new guests.');
       return;
     }
     setError(null);

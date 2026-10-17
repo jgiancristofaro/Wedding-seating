@@ -194,7 +194,9 @@ function tablePage(pdf: JsPdf, doc: PlanDoc, t: Table) {
   for (const g of gs) {
     pdf.text(String((g.seat ?? 0) + 1), 60, y);
     pdf.text(safe(fullName(g)), 100, y);
-    pdf.text(safe([...g.dietary, ...g.access].join(', ') || '-'), 330, y, { maxWidth: W - 390 });
+    pdf.text(safe([g.meal, ...g.dietary, ...g.access].filter(Boolean).join(', ') || '-'), 330, y, {
+      maxWidth: W - 390,
+    });
     y += 20;
   }
   if (!gs.length) {
@@ -316,10 +318,11 @@ export async function placeCardsPdf(doc: PlanDoc, paper: Paper): Promise<Blob> {
       align: 'center',
       charSpace: 1.5,
     });
-    if (g.dietary.length) {
+    const extras = [g.meal, ...g.dietary].filter(Boolean);
+    if (extras.length) {
       pdf.setFontSize(8);
       pdf.setTextColor(...MUTED);
-      pdf.text(safe(g.dietary.join(' · ')), x + cw / 2, midY + 34, { align: 'center' });
+      pdf.text(safe(extras.join(' · ')), x + cw / 2, midY + 34, { align: 'center' });
     }
   });
   if (!guests.length) pdf.text('Seat some guests first.', W / 2, H / 2, { align: 'center' });

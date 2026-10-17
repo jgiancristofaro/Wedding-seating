@@ -4,6 +4,7 @@ import {
   Download,
   Link2,
   Lock,
+  MailCheck,
   Pencil,
   Plus,
   Search,
@@ -23,6 +24,8 @@ import { addGuest, linkHousehold, removeGuests, updateGuest, updateGuests } from
 import { usePlan } from '../../store/planStore';
 import { useUi } from '../../store/uiStore';
 import { ImportDialog } from './ImportDialog';
+import { RsvpDialog } from './RsvpDialog';
+import type { ParsedTable } from '../../import/csv';
 import { GuestEditor } from './GuestEditor';
 import { GroupsDialog } from './GroupsDialog';
 import { RulesDialog } from '../rules/RulesDialog';
@@ -44,6 +47,8 @@ export function downloadSampleCsv() {
 export function GuestsTab() {
   const doc = usePlan((s) => s.doc!);
   const [importOpen, setImportOpen] = useState(false);
+  const [rsvpOpen, setRsvpOpen] = useState(false);
+  const [rsvpTable, setRsvpTable] = useState<ParsedTable | null>(null);
   const [groupsOpen, setGroupsOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -108,7 +113,23 @@ export function GuestsTab() {
 
   const dialogs = (
     <>
-      <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onRsvpFile={(t) => {
+          setImportOpen(false);
+          setRsvpTable(t);
+          setRsvpOpen(true);
+        }}
+      />
+      <RsvpDialog
+        open={rsvpOpen}
+        initialTable={rsvpTable}
+        onClose={() => {
+          setRsvpOpen(false);
+          setRsvpTable(null);
+        }}
+      />
       <GroupsDialog open={groupsOpen} onClose={() => setGroupsOpen(false)} />
       <RulesDialog open={rulesOpen} onClose={() => setRulesOpen(false)} />
       {editing && doc.guests[editing] && <GuestEditor guestId={editing} onClose={() => setEditing(null)} />}
@@ -167,6 +188,9 @@ export function GuestsTab() {
           </div>
           <button className="btn-secondary" onClick={() => setImportOpen(true)} data-testid="import-open">
             <Upload size={16} /> Import
+          </button>
+          <button className="btn-secondary" onClick={() => setRsvpOpen(true)} data-testid="rsvp-open">
+            <MailCheck size={16} /> Update RSVPs
           </button>
           <button className="btn-secondary" onClick={() => setGroupsOpen(true)}>
             <Tags size={16} /> Groups
@@ -390,6 +414,11 @@ export function GuestsTab() {
                   </td>
                   <td className="hidden border-b border-line/60 px-2 py-1.5 lg:table-cell">
                     <div className="flex flex-wrap gap-1">
+                      {g.meal && (
+                        <span className="chip bg-sunken text-ink" title="Meal choice">
+                          {g.meal}
+                        </span>
+                      )}
                       {g.dietary.map((d) => (
                         <span key={d} className="chip bg-sage/15 text-sage">
                           {d}

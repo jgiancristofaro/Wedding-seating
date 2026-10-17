@@ -32,6 +32,8 @@ export function normalizeDoc(input: unknown): PlanDoc {
     g.dietary = Array.isArray(g.dietary) ? g.dietary.map(String) : [];
     g.access = Array.isArray(g.access) ? g.access.map(String) : [];
     g.notes = String(g.notes ?? '');
+    if (g.meal != null && typeof g.meal !== 'string') g.meal = String(g.meal);
+    if (!g.meal) delete g.meal;
     g.rsvp = g.rsvp === 'attending' || g.rsvp === 'declined' ? g.rsvp : 'pending';
     g.groupId = g.groupId && doc.groups[g.groupId] ? g.groupId : null;
     g.partyId = g.partyId ?? null;

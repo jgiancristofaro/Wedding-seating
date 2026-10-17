@@ -14,6 +14,8 @@ export interface Guest {
   /** Accessibility needs, e.g. "wheelchair", "hearing". */
   access: string[];
   notes: string;
+  /** Meal choice from RSVPs, e.g. "Short rib". */
+  meal?: string;
   isChild?: boolean;
   tableId: string | null;
   /** Seat index around the table. Index >= capacity means overflow. */

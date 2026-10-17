@@ -12,6 +12,7 @@ export function guestRows(doc: PlanDoc): string[][] {
     'Seat',
     'Group',
     'RSVP',
+    'Meal',
     'Dietary',
     'Accessibility',
     'Household',
@@ -32,6 +33,7 @@ export function guestRows(doc: PlanDoc): string[][] {
         t && g.seat != null ? String(g.seat + 1) : '',
         g.groupId ? (doc.groups[g.groupId]?.name ?? '') : '',
         g.rsvp,
+        g.meal ?? '',
         g.dietary.join('; '),
         g.access.join('; '),
         g.partyId ? parties.get(g.partyId)! : '',
@@ -42,7 +44,7 @@ export function guestRows(doc: PlanDoc): string[][] {
 }
 
 export function rosterRows(doc: PlanDoc): string[][] {
-  const out: string[][] = [['Table', 'Seat', 'Guest', 'Group', 'Dietary', 'Accessibility']];
+  const out: string[][] = [['Table', 'Seat', 'Guest', 'Group', 'Meal', 'Dietary', 'Accessibility']];
   const tables = Object.values(doc.tables).sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { numeric: true }),
   );
@@ -56,10 +58,11 @@ export function rosterRows(doc: PlanDoc): string[][] {
         String((g.seat ?? 0) + 1),
         fullName(g),
         g.groupId ? (doc.groups[g.groupId]?.name ?? '') : '',
+        g.meal ?? '',
         g.dietary.join('; '),
         g.access.join('; '),
       ]);
-    if (gs.length === 0) out.push([t.name, '', '(empty)', '', '', '']);
+    if (gs.length === 0) out.push([t.name, '', '(empty)', '', '', '', '']);
   }
   return out;
 }
@@ -78,7 +81,7 @@ export async function toXlsx(doc: PlanDoc): Promise<Blob> {
     );
   return (await writeXlsxFile([sheet(guestRows(doc)), sheet(rosterRows(doc))], {
     sheets: ['Guests', 'Tables'],
-    columns: [Array(11).fill({ width: 18 }), Array(6).fill({ width: 20 })],
+    columns: [Array(12).fill({ width: 18 }), Array(7).fill({ width: 20 })],
   })) as unknown as Blob;
 }
 

@@ -42,7 +42,10 @@ To develop against Supabase, copy `.env.example` to `.env.local` and fill in the
 - **Guests:** CSV drag-drop/file picker, paste from Excel/Sheets, or add by hand. Columns are auto-detected (name or
   first/last, party size/plus-ones, household, group/side, dietary, accessibility, RSVP, notes, table).
   **Zola exports and Zola's upload template import directly** — partners, plus-ones, additional guests and children
-  become linked households. Preview shows
+  become linked households.
+  **Update RSVPs** reconciles Zola's separate RSVP export with the guest list (status for the event you seat —
+  the reception by default — plus meal choices and dietary answers); declined guests drop out of seating, guests
+  still awaiting a reply stay in. Preview shows
   new / changed / duplicate / invalid rows; re-imports merge by name and let you pick which value wins. A sample CSV
   template is downloadable. Households and plus-ones are linked and move together.
 - **Layout:** round, oval, banquet, square, head and sweetheart tables; venue items (dance floor, stage, bar, buffet,

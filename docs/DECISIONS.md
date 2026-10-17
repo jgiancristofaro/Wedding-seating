@@ -56,3 +56,13 @@ Ambiguities resolved during the build, newest last. Each entry: decision — rea
     (real lists have "Ron Smith" senior and junior); identical rows are still skipped as duplicates. On re-import,
     a name shared by several existing guests matches the one whose household overlaps the row. Companions of a
     skipped row are skipped with it.
+22. **RSVP reconciliation is a separate "Update RSVPs" step** (Zola exports RSVPs as a different file from the guest
+    list). One event decides the status — Reception by default, user-selectable. Rows match guests by name; same-name
+    guests are told apart by the household of neighbouring rows; Zola's "Guest" rows match the unnamed "Guest of …"
+    plus-one of the person above them, and a named row in that position renames the placeholder. Blank answers
+    (not invited to that event) leave the status unchanged; "No Response" = awaiting reply. Meal choices go into a new
+    optional `meal` field; free-text dietary answers are appended to notes ("RSVP: …"), skipping "none"/"nope" etc.
+    Declined guests' seats are freed (locked guests keep theirs). Guests missing from the file are left untouched;
+    people missing from the guest list are listed and only added if asked. The whole update is one undo step and
+    re-running the same file changes nothing. A file dropped into Import that looks like an RSVP export (named event
+    columns, no guest-list columns) is routed to the RSVP update instead of being imported as new guests.
