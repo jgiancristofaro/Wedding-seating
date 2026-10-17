@@ -177,18 +177,24 @@ export class SyncEngine {
       }
     } catch (e) {
       const err = e instanceof BackendError ? e : new BackendError('unknown', String(e));
+      if (err.detail) console.warn('[sync] save failed:', err.code, err.detail);
       if (err.code === 'forbidden') {
         this.role = 'view';
         useSync.getState().set({ status: 'readonly', message: 'This link can no longer edit the plan.' });
       } else if (err.code === 'too_large') {
         useSync.getState().set({ status: 'error', message: err.message });
       } else {
+        // Only a real connectivity problem is "offline". Setup problems (bad key, SQL not run…) are errors we can
+        // name — the edits are still kept on this device and we keep retrying in case it gets fixed.
+        const offline = err.code === 'network' || err.code === 'unavailable';
+        const tail = err.detail ? ` (${err.detail})` : '';
         useSync.getState().set({
-          status: 'offline',
-          message:
-            err.code === 'network'
-              ? 'Offline — changes are kept on this device and will sync.'
-              : 'Server unavailable — retrying.',
+          status: offline ? 'offline' : 'error',
+          message: offline
+            ? err.code === 'network' && typeof navigator !== 'undefined' && navigator.onLine
+              ? `${err.message}${tail}`
+              : 'Offline — changes are kept on this device and will sync.'
+            : `Not saved to the cloud: ${err.message}${tail} Your changes are kept on this device.`,
         });
         this.schedule(this.retryDelay);
         this.retryDelay = Math.min(30_000, this.retryDelay * 2);

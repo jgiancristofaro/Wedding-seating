@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
-import { ArrowRight, Clock, Eye, FileUp, Pencil, Sparkles, Trash2, Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Check, Clock, Eye, FileUp, Pencil, Sparkles, Trash2, Users } from 'lucide-react';
 import { Spinner } from '../components/ui';
 import type { PlanDoc } from '../model/types';
 import { navigate } from '../lib/router';
 import { useTheme } from '../lib/theme';
 import { BackendError } from '../persistence/backend';
-import { cloudConfigured } from '../persistence/index';
+import { cloudConfigured, getBackend } from '../persistence/index';
 import { normalizeDoc } from '../persistence/migrate';
 import { forgetPlan, getRecent, type RecentPlan } from '../persistence/recent';
 import { createPlan } from '../persistence/session';
@@ -46,6 +46,53 @@ export function Hero() {
         />
       ))}
     </svg>
+  );
+}
+
+type CloudCheck =
+  { state: 'checking' } | { state: 'ok' } | { state: 'fail'; message: string; detail?: string };
+
+/** Tells the owner right away whether the Supabase keys and database setup actually work. */
+function CloudStatus() {
+  const [check, setCheck] = useState<CloudCheck>({ state: 'checking' });
+  useEffect(() => {
+    let alive = true;
+    getBackend()
+      .then((b) => b.ping())
+      .then(
+        (r) =>
+          alive &&
+          setCheck(
+            r.ok ? { state: 'ok' } : { state: 'fail', message: r.error.message, detail: r.error.detail },
+          ),
+      )
+      .catch((e) => alive && setCheck({ state: 'fail', message: (e as Error).message }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (check.state === 'checking')
+    return (
+      <p className="mb-8 text-sm text-muted" role="status">
+        Checking cloud storage…
+      </p>
+    );
+  if (check.state === 'ok')
+    return (
+      <p className="mb-8 flex items-center gap-2 text-sm text-ok" role="status" data-testid="cloud-ok">
+        <Check size={14} /> Cloud storage connected — plans are saved online and can be shared.
+      </p>
+    );
+  return (
+    <div
+      className="mb-8 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger"
+      role="alert"
+      data-testid="cloud-fail"
+    >
+      <strong>Cloud storage isn’t working.</strong> {check.message}
+      {check.detail && <div className="mt-1 break-words font-mono text-xs opacity-80">{check.detail}</div>}
+      <div className="mt-1 text-xs opacity-80">Plans made now are still saved on this device.</div>
+    </div>
   );
 }
 
@@ -143,6 +190,8 @@ export function Home() {
             <Hero />
           </div>
         </section>
+
+        {cloudConfigured() && <CloudStatus />}
 
         {!cloudConfigured() && (
           <div

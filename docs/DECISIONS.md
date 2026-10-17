@@ -66,3 +66,8 @@ Ambiguities resolved during the build, newest last. Each entry: decision — rea
     people missing from the guest list are listed and only added if asked. The whole update is one undo step and
     re-running the same file changes nothing. A file dropped into Import that looks like an RSVP export (named event
     columns, no guest-list columns) is routed to the RSVP update instead of being imported as new guests.
+23. **Only real connectivity failures are shown as "Offline".** Server-side problems (bad key, SQL not run, missing
+    grants, unexpected errors) are classified in `persistence/errors.ts`, shown as "Not saved to the cloud: <what to
+    fix> (<technical detail>)", still keep edits on the device and keep retrying with backoff. The start page runs a
+    read-only `get_plan` with a dummy token as a health check, and a plan that exists only in local mode says so
+    instead of "not found".

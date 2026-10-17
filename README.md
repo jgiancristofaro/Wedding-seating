@@ -63,6 +63,22 @@ To develop against Supabase, copy `.env.example` to `.env.local` and fill in the
   device and synced later; concurrent edits merge automatically; undo/redo (50 steps); version history (last 30,
   restorable); recent plans remembered on the start page.
 
+## Troubleshooting cloud saving
+
+When Supabase is configured, the start page shows **“Cloud storage connected”** or a red box saying what is wrong,
+with the technical detail. The same message appears in the banner under the top bar if saving fails.
+
+| Message                                                           | Cause                                                                                                                                           | Fix                                                                                                                                     |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| _Supabase rejected the API key_ (HTTP 401)                        | Wrong key, or key from a different project than the URL                                                                                         | Re-copy **Project URL** and the **anon/publishable** key from _Project Settings → API_, update both GitHub secrets, re-run the workflow |
+| _The database isn’t set up yet_ (404, `PGRST202`)                 | SQL not run, run in another project, or the API hasn’t refreshed                                                                                | Run all of `supabase/migrations/0001_init.sql` in the SQL editor (its last line refreshes the API)                                      |
+| _The database refused access_ (403, `42501`, “permission denied”) | Grants missing                                                                                                                                  | Re-run `0001_init.sql`                                                                                                                  |
+| _Can’t reach the server_ (“Failed to fetch”)                      | Typo in `VITE_SUPABASE_URL` (it must look like `https://abcd1234.supabase.co`, nothing after `.co`), a paused free-tier project, or no internet | Fix the secret / un-pause the project in the Supabase dashboard                                                                         |
+| _This plan only exists in this browser_                           | The plan was made before the secrets were added (local mode)                                                                                    | Export → Backup in that browser, then _Restore from a JSON backup_ on the start page                                                    |
+
+Secrets are baked in at build time: after changing them, **re-run the “CI & deploy” workflow** and hard-refresh the page.
+The browser console (F12) also logs `[sync] save failed:` with the same detail.
+
 ## Backups
 
 _Export → Backup → Download backup (.json)_ saves everything except the floor plan photo. Restore it with

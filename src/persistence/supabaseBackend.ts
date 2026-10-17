@@ -1,5 +1,6 @@
 import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
 import type { PlanDoc } from '../model/types';
+import { classifyError } from './errors';
 import {
   BackendError,
   CLIENT_ID,
@@ -7,22 +8,10 @@ import {
   type Backend,
   type CreatedPlan,
   type LoadedPlan,
+  type PingResult,
   type SaveResult,
   type SnapshotMeta,
 } from './backend';
-
-function toError(e: unknown): BackendError {
-  const err = e as { code?: string; message?: string; status?: number } | null;
-  const msg = err?.message ?? String(e);
-  if (err?.code === '42501' || /forbidden/.test(msg))
-    return new BackendError('forbidden', 'This link cannot edit the plan.');
-  if (/too_large/.test(msg)) return new BackendError('too_large', 'That is too large to save.');
-  if (/Failed to fetch|NetworkError|network|fetch failed|Load failed/i.test(msg) || err?.status === 0)
-    return new BackendError('network', 'You appear to be offline.');
-  if (err?.status && err.status >= 500)
-    return new BackendError('unavailable', 'The server is temporarily unavailable.');
-  return new BackendError('unknown', msg);
-}
 
 function b64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -50,10 +39,20 @@ export class SupabaseBackend implements Backend {
     try {
       res = await this.sb.rpc(fn, args);
     } catch (e) {
-      throw toError(e);
+      throw classifyError(e);
     }
-    if (res.error) throw toError({ ...res.error, status: res.status });
+    if (res.error) throw classifyError({ ...res.error, status: res.status });
     return res.data as T;
+  }
+
+  async ping(): Promise<PingResult> {
+    try {
+      // An unknown token must come back as null; anything else means the key, URL or database is wrong.
+      await this.rpc('get_plan', { p_token: '0'.repeat(48) });
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e instanceof BackendError ? e : classifyError(e) };
+    }
   }
 
   async createPlan(doc: PlanDoc): Promise<CreatedPlan> {

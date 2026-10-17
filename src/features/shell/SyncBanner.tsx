@@ -19,7 +19,7 @@ export function SyncBanner() {
   if (status === 'offline' || status === 'error')
     return (
       <div
-        className={`flex items-center justify-center gap-2 px-3 py-1.5 text-xs ${status === 'error' ? 'bg-danger-soft text-danger' : 'bg-accent-soft text-ink'}`}
+        className={`flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-3 py-1.5 text-xs ${status === 'error' ? 'bg-danger-soft text-danger' : 'bg-accent-soft text-ink'}`}
         role="alert"
       >
         <CloudOff size={14} /> {message ?? 'Offline — your changes are kept on this device.'}

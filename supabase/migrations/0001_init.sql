@@ -277,3 +277,6 @@ grant execute on function
   public.put_asset(text, text, text),
   public.get_asset(text, uuid)
 to anon, authenticated;
+
+-- Make the new functions visible to the Supabase API immediately (otherwise it can take a minute).
+notify pgrst, 'reload schema';

@@ -30,15 +30,21 @@ export interface SnapshotMeta {
 /** Errors the UI turns into friendly messages. */
 export class BackendError extends Error {
   constructor(
-    public code: 'not_found' | 'forbidden' | 'network' | 'too_large' | 'unavailable' | 'unknown',
+    public code: 'not_found' | 'forbidden' | 'network' | 'too_large' | 'unavailable' | 'config' | 'unknown',
     message: string,
+    /** technical one-liner for diagnostics (HTTP status, error code, server message) */
+    public detail?: string,
   ) {
     super(message);
   }
 }
 
+export type PingResult = { ok: true } | { ok: false; error: BackendError };
+
 export interface Backend {
   kind: 'cloud' | 'local';
+  /** Cheap, read-only check that the server is reachable and the database is set up. */
+  ping(): Promise<PingResult>;
   createPlan(doc: PlanDoc): Promise<CreatedPlan>;
   /** Resolves an edit or view token. Throws BackendError('not_found') for unknown tokens. */
   loadPlan(token: string): Promise<LoadedPlan>;

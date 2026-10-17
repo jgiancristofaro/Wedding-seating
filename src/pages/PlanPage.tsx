@@ -45,7 +45,20 @@ export default function PlanPage({ token }: { token: string }) {
       .catch((e) => {
         if (cancelled) return;
         const err = e instanceof BackendError ? e : null;
-        if (err?.code === 'not_found')
+        if (err?.code === 'not_found' && err.detail === 'local-only')
+          setState({
+            kind: 'error',
+            title: 'This plan only exists in this browser',
+            message:
+              'It was created before cloud saving was turned on, so it was never uploaded. Open the plan in the browser where you made it, download a backup from Export → Backup, then use “Restore from a JSON backup” on the start page — that creates a cloud copy with share links.',
+          });
+        else if (err?.code === 'config')
+          setState({
+            kind: 'error',
+            title: 'Cloud storage isn’t working',
+            message: `${err.message}${err.detail ? ` (${err.detail})` : ''}`,
+          });
+        else if (err?.code === 'not_found')
           setState({
             kind: 'error',
             title: 'We couldn’t find that plan',

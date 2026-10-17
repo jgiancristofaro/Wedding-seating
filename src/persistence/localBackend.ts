@@ -55,6 +55,10 @@ export class LocalBackend implements Backend {
   kind = 'local' as const;
   private channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wedding-seating') : null;
 
+  async ping() {
+    return { ok: true } as const;
+  }
+
   async createPlan(doc: PlanDoc): Promise<CreatedPlan> {
     const p: StoredPlan = {
       id: uid(16),

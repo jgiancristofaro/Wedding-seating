@@ -9,7 +9,7 @@ import { getBackend } from './index';
 import { merge3 } from './merge';
 import { normalizeDoc } from './migrate';
 import { rememberPlan } from './recent';
-import { SyncEngine, setSyncEngine, getSyncEngine, type SyncStatus } from './sync';
+import { SyncEngine, setSyncEngine, getSyncEngine, useSync, type SyncStatus } from './sync';
 
 export interface OpenedPlan {
   /** the token this plan was opened with (edit or view) */
@@ -79,13 +79,22 @@ export async function openPlan(token: string): Promise<OpenedPlan> {
     }
   } catch (e) {
     const err = e instanceof BackendError ? e : new BackendError('unknown', String(e));
-    if ((err.code === 'network' || err.code === 'unavailable' || err.code === 'unknown') && draft) {
+    const recoverable = ['network', 'unavailable', 'config', 'unknown'].includes(err.code);
+    if (recoverable && draft) {
       meta = { planId: draft.planId, role: draft.role, viewToken: draft.viewToken };
       base = { doc: draft.baseDoc, version: draft.baseVersion };
       doc = draft.doc;
-      status = 'offline';
-      notice = 'You’re offline. Showing the copy saved on this device; edits will sync when you reconnect.';
-    } else throw err;
+      const offline = err.code === 'network' || err.code === 'unavailable';
+      status = offline ? 'offline' : 'error';
+      notice = offline
+        ? 'You’re offline. Showing the copy saved on this device; edits will sync when you reconnect.'
+        : `Cloud storage isn’t working (${err.detail ?? err.message}). Showing the copy saved on this device.`;
+      useSync.getState().set({ message: notice });
+    } else {
+      // A plan made while the app was in local mode isn't in the cloud database: say so instead of "not found".
+      if (err.code === 'not_found' && draft && backend.kind === 'cloud') err.detail = 'local-only';
+      throw err;
+    }
   }
 
   loadDoc(doc, meta.role, meta.planId);
