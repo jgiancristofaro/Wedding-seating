@@ -15,6 +15,17 @@ describe('classifyError', () => {
     expect(e.detail).toContain('HTTP 401');
   });
 
+  it('PGRST125 (invalid path) points at the URL, not the database', () => {
+    const e = classifyError({
+      code: 'PGRST125',
+      status: 404,
+      message: 'Invalid path specified in request URL',
+    });
+    expect(e.code).toBe('config');
+    expect(e.message).toMatch(/Project URL/);
+    expect(e.message).not.toMatch(/0001_init/);
+  });
+
   it('missing database functions / un-run SQL is a config problem', () => {
     expect(
       classifyError({

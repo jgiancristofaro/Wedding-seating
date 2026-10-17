@@ -1,5 +1,6 @@
 import type { Backend } from './backend';
 import { LocalBackend } from './localBackend';
+import { normalizeAnonKey, normalizeSupabaseUrl } from './supabaseUrl';
 
 let backend: Promise<Backend> | null = null;
 
@@ -12,7 +13,10 @@ export function getBackend(): Promise<Backend> {
     backend = cloudConfigured()
       ? import('./supabaseBackend').then(
           (m) =>
-            new m.SupabaseBackend(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY),
+            new m.SupabaseBackend(
+              normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL),
+              normalizeAnonKey(import.meta.env.VITE_SUPABASE_ANON_KEY),
+            ),
         )
       : Promise.resolve(new LocalBackend());
   }

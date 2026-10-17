@@ -39,6 +39,12 @@ export function classifyError(e: unknown): BackendError {
       'Supabase rejected the API key. Check that VITE_SUPABASE_ANON_KEY is the anon/publishable key of the same project as VITE_SUPABASE_URL.',
       detail,
     );
+  if (err.code === 'PGRST125' || /invalid path specified/i.test(msg))
+    return new BackendError(
+      'config',
+      'The Supabase URL has extra characters after “.supabase.co”. Use only the Project URL, e.g. https://abcd1234.supabase.co (no /rest/v1).',
+      detail,
+    );
   if (
     err.status === 404 ||
     /PGRST20[25]|42883|could not find the function|schema cache|does not exist/i.test(`${err.code} ${msg}`)
