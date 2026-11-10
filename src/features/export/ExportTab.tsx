@@ -51,6 +51,7 @@ export default function ExportTab() {
   const [busy, setBusy] = useState<string | null>(null);
   const [paper, setPaper] = useState<Paper>(doc.settings.units === 'm' ? 'a4' : 'letter');
   const [sections, setSections] = useState({ overview: true, tables: true, lookup: true });
+  const [meals, setMeals] = useState(true);
   const [names, setNames] = useState(true);
   const [withImage, setWithImage] = useState(true);
   const [history, setHistory] = useState(false);
@@ -153,6 +154,17 @@ export default function ExportTab() {
                 </label>
               ))}
             </div>
+            <label className="flex min-h-[40px] items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={meals}
+                onChange={(e) => setMeals(e.target.checked)}
+                className="h-4 w-4 accent-[rgb(var(--accent))]"
+                data-testid="pdf-meals"
+              />
+              Include meal choices
+              <span className="text-xs text-muted">(table pages &amp; place cards)</span>
+            </label>
             <div className="flex flex-wrap gap-2">
               {btn(
                 'pdf',
@@ -165,6 +177,7 @@ export default function ExportTab() {
                     await seatingChartPdf(doc, {
                       paper,
                       ...sections,
+                      meals,
                       backdropDataUrl: withImage ? await backdropDataUrl() : null,
                     }),
                     `${base}-seating-chart.pdf`,
@@ -174,7 +187,7 @@ export default function ExportTab() {
               )}
               {btn('placecards', 'Place cards', async () => {
                 const { placeCardsPdf } = await import('../../export/pdf');
-                downloadBlob(await placeCardsPdf(doc, paper), `${base}-place-cards.pdf`);
+                downloadBlob(await placeCardsPdf(doc, paper, { meals }), `${base}-place-cards.pdf`);
               })}
               {btn('tablecards', 'Table numbers', async () => {
                 const { tableCardsPdf } = await import('../../export/pdf');

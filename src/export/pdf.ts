@@ -56,6 +56,8 @@ export interface ChartPdfOptions {
   tables: boolean;
   lookup: boolean;
   backdropDataUrl?: string | null;
+  /** show meal choices on the table pages (default true) */
+  meals?: boolean;
 }
 
 export async function seatingChartPdf(doc: PlanDoc, o: ChartPdfOptions): Promise<Blob> {
@@ -94,7 +96,7 @@ export async function seatingChartPdf(doc: PlanDoc, o: ChartPdfOptions): Promise
   if (o.tables) {
     for (const t of sortedTables(doc)) {
       page('portrait');
-      tablePage(pdf, doc, t);
+      tablePage(pdf, doc, t, o.meals !== false);
     }
   }
 
@@ -106,7 +108,7 @@ export async function seatingChartPdf(doc: PlanDoc, o: ChartPdfOptions): Promise
   return pdf.output('blob');
 }
 
-function tablePage(pdf: JsPdf, doc: PlanDoc, t: Table) {
+function tablePage(pdf: JsPdf, doc: PlanDoc, t: Table, meals: boolean) {
   const W = pdf.internal.pageSize.getWidth();
   pdf.setFont('times', 'bold');
   pdf.setFontSize(30);
@@ -183,7 +185,7 @@ function tablePage(pdf: JsPdf, doc: PlanDoc, t: Table) {
   pdf.setTextColor(...MUTED);
   pdf.text('SEAT', 60, y);
   pdf.text('GUEST', 100, y);
-  pdf.text('MEAL / NEEDS', 330, y);
+  pdf.text(meals ? 'MEAL / NEEDS' : 'NEEDS', 330, y);
   y += 8;
   pdf.setDrawColor(228, 219, 206);
   pdf.line(60, y, W - 60, y);
@@ -194,9 +196,14 @@ function tablePage(pdf: JsPdf, doc: PlanDoc, t: Table) {
   for (const g of gs) {
     pdf.text(String((g.seat ?? 0) + 1), 60, y);
     pdf.text(safe(fullName(g)), 100, y);
-    pdf.text(safe([g.meal, ...g.dietary, ...g.access].filter(Boolean).join(', ') || '-'), 330, y, {
-      maxWidth: W - 390,
-    });
+    pdf.text(
+      safe([meals ? g.meal : '', ...g.dietary, ...g.access].filter(Boolean).join(', ') || '-'),
+      330,
+      y,
+      {
+        maxWidth: W - 390,
+      },
+    );
     y += 20;
   }
   if (!gs.length) {
@@ -283,7 +290,11 @@ function hex(c: string): [number, number, number] {
 }
 
 /** Folded tent place cards, 4 per page (fold along the dashed line). */
-export async function placeCardsPdf(doc: PlanDoc, paper: Paper): Promise<Blob> {
+export async function placeCardsPdf(
+  doc: PlanDoc,
+  paper: Paper,
+  opts: { meals?: boolean } = {},
+): Promise<Blob> {
   const pdf = await newDoc(paper, 'portrait');
   const W = pdf.internal.pageSize.getWidth();
   const H = pdf.internal.pageSize.getHeight();
@@ -318,7 +329,7 @@ export async function placeCardsPdf(doc: PlanDoc, paper: Paper): Promise<Blob> {
       align: 'center',
       charSpace: 1.5,
     });
-    const extras = [g.meal, ...g.dietary].filter(Boolean);
+    const extras = [opts.meals !== false ? g.meal : '', ...g.dietary].filter(Boolean);
     if (extras.length) {
       pdf.setFontSize(8);
       pdf.setTextColor(...MUTED);
