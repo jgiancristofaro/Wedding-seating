@@ -195,7 +195,7 @@ export function Inspector({
     );
   }
 
-  if (selection.length > 1 && editable) {
+  if (selection.length > 1 && editable && mode === 'layout') {
     const items = selection.map((id) => doc.tables[id] ?? doc.elements[id]).filter(Boolean);
     const align = (axis: 'x' | 'y') => {
       const avg = items.reduce((a, it) => a + it[axis], 0) / items.length;
@@ -250,24 +250,26 @@ export function Inspector({
                 data-testid="table-name"
               />
             </label>
-            <label className="block">
-              <span className="label">Shape</span>
-              <select
-                className="input"
-                value={t.shape}
-                onChange={(e) => {
-                  const shape = e.target.value as TableShape;
-                  const d = SHAPE_DEFAULTS[shape];
-                  updateTable(t.id, { shape, w: d.w, h: d.h });
-                }}
-              >
-                {Object.entries(SHAPE_DEFAULTS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {mode === 'layout' && (
+              <label className="block">
+                <span className="label">Shape</span>
+                <select
+                  className="input"
+                  value={t.shape}
+                  onChange={(e) => {
+                    const shape = e.target.value as TableShape;
+                    const d = SHAPE_DEFAULTS[shape];
+                    updateTable(t.id, { shape, w: d.w, h: d.h });
+                  }}
+                >
+                  {Object.entries(SHAPE_DEFAULTS).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <div>
               <span className="label">Seats</span>
               <div className="flex items-center gap-2">
@@ -294,44 +296,48 @@ export function Inspector({
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <NumField
-                label={t.shape === 'round' ? 'Diameter' : 'Length'}
-                value={toDisplay(t.w, units)}
-                step={0.5}
-                min={1}
-                suffix={unitLabel(units)}
-                onChange={(v) =>
-                  updateTable(
-                    t.id,
-                    t.shape === 'round' || t.shape === 'square'
-                      ? { w: fromDisplay(v, units), h: fromDisplay(v, units) }
-                      : { w: fromDisplay(v, units) },
-                  )
-                }
-              />
-              {t.shape !== 'round' && t.shape !== 'square' && (
+            {mode === 'layout' && (
+              <div className="grid grid-cols-2 gap-2">
                 <NumField
-                  label="Width"
-                  value={toDisplay(t.h, units)}
+                  label={t.shape === 'round' ? 'Diameter' : 'Length'}
+                  value={toDisplay(t.w, units)}
                   step={0.5}
                   min={1}
                   suffix={unitLabel(units)}
-                  onChange={(v) => updateTable(t.id, { h: fromDisplay(v, units) })}
+                  onChange={(v) =>
+                    updateTable(
+                      t.id,
+                      t.shape === 'round' || t.shape === 'square'
+                        ? { w: fromDisplay(v, units), h: fromDisplay(v, units) }
+                        : { w: fromDisplay(v, units) },
+                    )
+                  }
                 />
-              )}
-              <NumField
-                label="Rotation"
-                value={t.rotation}
-                step={15}
-                suffix="°"
-                onChange={(v) => updateTable(t.id, { rotation: ((v % 360) + 360) % 360 })}
-              />
-            </div>
+                {t.shape !== 'round' && t.shape !== 'square' && (
+                  <NumField
+                    label="Width"
+                    value={toDisplay(t.h, units)}
+                    step={0.5}
+                    min={1}
+                    suffix={unitLabel(units)}
+                    onChange={(v) => updateTable(t.id, { h: fromDisplay(v, units) })}
+                  />
+                )}
+                <NumField
+                  label="Rotation"
+                  value={t.rotation}
+                  step={15}
+                  suffix="°"
+                  onChange={(v) => updateTable(t.id, { rotation: ((v % 360) + 360) % 360 })}
+                />
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
-              <button className="btn-secondary" onClick={() => duplicateItems([t.id])}>
-                <Copy size={15} /> Duplicate
-              </button>
+              {mode === 'layout' && (
+                <button className="btn-secondary" onClick={() => duplicateItems([t.id])}>
+                  <Copy size={15} /> Duplicate
+                </button>
+              )}
               <button className="btn-secondary" onClick={() => setLocked([t.id], !t.locked)}>
                 {t.locked ? <LockOpen size={15} /> : <Lock size={15} />} {t.locked ? 'Unlock' : 'Lock'}
               </button>
@@ -340,13 +346,20 @@ export function Inspector({
                   <UserMinus size={15} /> Clear seats
                 </button>
               )}
-              <button className="btn-danger" onClick={() => deleteItems([t.id])}>
-                <Trash2 size={15} /> Delete
-              </button>
+              {mode === 'layout' && (
+                <button className="btn-danger" onClick={() => deleteItems([t.id])}>
+                  <Trash2 size={15} /> Delete
+                </button>
+              )}
             </div>
             {t.locked && (
               <p className="text-xs text-muted">
                 Locked tables can’t be moved and auto-seat won’t change who sits here.
+              </p>
+            )}
+            {mode === 'seating' && (
+              <p className="text-xs text-muted" data-testid="layout-hint">
+                To move, resize, rotate or delete tables, use the Layout step.
               </p>
             )}
           </>

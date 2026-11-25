@@ -88,6 +88,8 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
   const pointers = useRef(new Map<number, Pt>());
   const spaceDown = useRef(false);
   const editable = !readOnly;
+  /** may tables and fixtures be moved, resized, rotated, duplicated or deleted here? */
+  const layoutEdit = editable && mode === 'layout';
   const grid = gridSize(doc.settings.units);
   const layers = doc.settings.layers;
 
@@ -225,7 +227,11 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
       }
       if (t.kind === 'item' && t.itemKind === 'table' && ui.armed.length && editable && mode === 'seating') {
         if (seatGuests(ui.armed, t.id, null)) ui.set({ armed: [], focusGuestId: ui.armed[0] });
+        return;
       }
+      // Seating mode: a click on a table just selects it (to see who's there); it can never start a move.
+      if (t.kind === 'item' && t.itemKind === 'table' && mode === 'seating')
+        ui.set({ selection: [t.id], focusGuestId: null });
     },
     [editable, mode],
   );
@@ -278,7 +284,7 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
     }
 
     const handle = target.closest('[data-handle]');
-    if (handle && editable) {
+    if (handle && layoutEdit) {
       const id = handle.getAttribute('data-id')!;
       const kind = handle.getAttribute('data-handle')!;
       (e.target as Element).setPointerCapture?.(e.pointerId);
@@ -317,7 +323,8 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
       if (!tap.current) tap.current = { kind: 'item', id, itemKind };
       const sel = useUi.getState().selection;
       const isSel = sel.includes(id);
-      const canMove = editable && (mode === 'layout' || itemKind === 'table');
+      // Tables and fixtures only move in Layout mode; in Seating mode a drag on them pans the view.
+      const canMove = layoutEdit;
       if (!canMove || (e.pointerType === 'touch' && !isSel)) {
         if (canMove && tap.current.kind === 'item')
           useUi.getState().set({ selection: [id], focusGuestId: null });
@@ -340,7 +347,7 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
     }
     // background
     tap.current = { kind: 'background' };
-    if (editable && ((mode === 'layout' && tool === 'select' && e.pointerType !== 'touch') || e.shiftKey)) {
+    if (layoutEdit && ((tool === 'select' && e.pointerType !== 'touch') || e.shiftKey)) {
       gesture.current = { type: 'marquee', start: world, add: e.shiftKey, moved: false };
     } else startPan(e);
   };
@@ -524,7 +531,7 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
     }
     if (
       (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === 'ArrowUp') &&
-      (seatEl || (tableEl && !ui.selection.length))
+      (seatEl || (tableEl && (!ui.selection.length || mode === 'seating')))
     ) {
       e.preventDefault();
       const tEl = (seatEl?.closest('[data-kind="table"]') ?? tableEl) as SVGGElement | null;
@@ -558,6 +565,8 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
       unseatGuests([seatEl.getAttribute('data-guest')!]);
       return;
     }
+    // Everything below changes the layout (delete, duplicate, nudge, rotate): Layout mode only.
+    if (!layoutEdit) return;
     if ((e.key === 'Delete' || e.key === 'Backspace') && ui.selection.length) {
       e.preventDefault();
       deleteItems(ui.selection);
@@ -752,7 +761,7 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
           )}
 
           {/* selection handles */}
-          {selTable && !selTable.locked && (
+          {selTable && !selTable.locked && layoutEdit && (
             <g transform={`translate(${selTable.x} ${selTable.y}) rotate(${selTable.rotation})`}>
               <line
                 x1={0}
@@ -787,7 +796,7 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
               </rect>
             </g>
           )}
-          {selEl && isSegment(selEl.kind) && (
+          {selEl && layoutEdit && isSegment(selEl.kind) && (
             <g>
               <circle
                 data-handle="p1"
@@ -809,7 +818,7 @@ export function Canvas({ mode, doc, readOnly, overlay, onToolClick }: CanvasProp
               />
             </g>
           )}
-          {selEl && !isSegment(selEl.kind) && (
+          {selEl && layoutEdit && !isSegment(selEl.kind) && (
             <g transform={`translate(${selEl.x} ${selEl.y}) rotate(${selEl.rotation})`}>
               <rect
                 x={-selEl.w / 2}

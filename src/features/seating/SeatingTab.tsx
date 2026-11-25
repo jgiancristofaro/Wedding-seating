@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { AlertTriangle, LayoutGrid, Plus, Scale, Sparkles, Upload, X } from 'lucide-react';
+import { AlertTriangle, LayoutGrid, Scale, Sparkles, Upload, X } from 'lucide-react';
 import { cx } from '../../components/ui';
 import { useIsMobile } from '../../lib/useMedia';
 import { fullName } from '../../model/names';
 import { detectConflicts } from '../../rules/conflicts';
-import { addTable, clearSampleLayout, updateSettings } from '../../store/actions';
+import { clearSampleLayout, updateSettings } from '../../store/actions';
 import { usePlan } from '../../store/planStore';
 import { useUi } from '../../store/uiStore';
 import { Canvas } from '../canvas/Canvas';
@@ -106,20 +106,6 @@ export function SeatingTab() {
                 <button className="btn-secondary shadow-soft" onClick={() => setRulesOpen(true)}>
                   <Scale size={16} /> <span className="hidden sm:inline">Rules</span>
                 </button>
-                <button
-                  className="btn-secondary shadow-soft"
-                  onClick={() => {
-                    const v = useUi.getState().viewport;
-                    const el = document.querySelector('[data-testid="canvas"]') as HTMLElement | null;
-                    addTable(
-                      'round',
-                      ((el?.clientWidth ?? 800) / 2 - v.x) / v.zoom,
-                      ((el?.clientHeight ?? 600) / 2 - v.y) / v.zoom,
-                    );
-                  }}
-                >
-                  <Plus size={16} /> <span className="hidden sm:inline">Table</span>
-                </button>
               </div>
             )}
             <button
@@ -162,7 +148,7 @@ export function SeatingTab() {
                 <>
                   <strong className="font-display text-lg">No tables yet</strong>
                   <p className="mt-1 text-muted">
-                    Add tables in the Layout step, or drop one in with the + Table button.
+                    Add tables in the Layout step, then come back to seat guests.
                   </p>
                   <button
                     className="btn-primary mt-3"
