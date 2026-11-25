@@ -39,13 +39,10 @@ jobs:
           name: playwright-report
           path: playwright-report
 
-  deploy:
+  build:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: test
     runs-on: ubuntu-24.04 # pinned: Playwright 1.56 cannot install browsers on ubuntu-latest (26.04)
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,5 +64,16 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
+  # Separate job (GitHub's recommended layout): publishing in the same job as the upload can run before the
+  # uploaded site is visible to the Pages API ("No artifacts named github-pages were found").
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
